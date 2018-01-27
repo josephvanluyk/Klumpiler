@@ -15,7 +15,7 @@ std::string sym;
 
 //REQUIRES: sym to be set up with nextSym()
 token getNext(void){
-removewhitespace:
+//removewhitespace:
 	//Remove all whitespace
 	while((sym == " ") || (sym == "\n") || (sym == "	")){
 		if(sym == "\n"){		//If there's a newline, increment line-count
@@ -25,7 +25,7 @@ removewhitespace:
 		sym = nextSym();
 	}
 	//Remove comments
-	if(sym == "{"){
+	/*if(sym == "{"){
 		sym = nextSym();
 		while(sym != "}"){
 			if(sym == "\n"){
@@ -35,7 +35,7 @@ removewhitespace:
 		}
 		sym = nextSym();
 		goto removewhitespace;
-	}
+	}*/
 
 	/*
 		At the end of the method, return token(n, tokenName, lexeme).
@@ -52,6 +52,10 @@ removewhitespace:
 		tokenName = ")";			//It's a right-paren token
 		lexeme = ")";				//And the instance of that token is a right-paren
 		sym = nextSym();			//Set up sym for the next getNext() call
+	}else if(sym == "}" || sym == "{"){
+		tokenName = sym;
+		lexeme = sym;
+		sym = nextSym();
 	}else if(isalpha(sym.at(0))){								//Otherwise, if the symbol is alphabetic
 		std::string potentialIdentifier = sym;
 		sym = nextSym();
@@ -115,8 +119,9 @@ removewhitespace:
 		}
 		lexeme = literal;						//In either case, the instance of the token is the literal
 	}else if(sym == "."){				//A symbol of "." represents the end of the program
-		tokenName = "End of Program";
+		tokenName = ".";
 		lexeme = ".";
+		sym = nextSym();
 	}else if(sym == "="){		//If we're looking at an equals, it's an equals. Duh.
 		tokenName = "Equals";
 		lexeme = "=";

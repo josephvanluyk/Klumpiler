@@ -8,7 +8,7 @@ int main(){
 	/*while(tok.lexeme != "."){
 		tok = getNext();
 	}*/
-	while(tok.lexeme != "."){
+	while(!std::cin.eof()){
 		std::cout << tok.lineNumber << "\t" << tok.tokenName << "\t" << tok.lexeme << std::endl;
 		tok = getNext();
 	}
