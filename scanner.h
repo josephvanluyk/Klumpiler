@@ -83,11 +83,7 @@ token getNext(void){
 			sym = nextSym();
 		}
 		literal += sym;
-		if(literal.size() == 3){					//If its length is 3 (i.e. it's of the form "x"), then it's a char.
-			tokenName = "Char";
-		}else{										//Otherwise, it's a string
-			tokenName = "String";
-		}
+		tokenName = "cstring";
 		lexeme = literal;							//In either case, the lexeme is the literal we've found.
 		sym = nextSym();
 	}else if(sym == ":"){						//If the symbol is a colon, then we're looking for the assignment operator
@@ -164,8 +160,7 @@ token getNext(void){
 
 
 std::string nextSym(){
-	//char chr = tolower(std::cin.get());
-	char chr = std::cin.get();
+	char chr = tolower(std::cin.get());
 	std::string s = std::string(1, chr);
 	return s;
 }
