@@ -1,4 +1,5 @@
 #include "scanner.h"
+#include "stdlib.h"
 token tok(0, "", "");
 
 /*
@@ -32,7 +33,7 @@ int main(){
 	sym = nextSym();
 	tok = getNext();
 
-	//Can we find a pal_program?
+	//Can we find a pal_progr	am?
 	bool parses = pal_program();
 
 	//If so, we're good. Otherwise, error()
@@ -50,6 +51,7 @@ bool pal_program(){
 			if(procedure()){
 				return true;
 			}
+			error();
 		}
 		return false;
 }
@@ -63,6 +65,7 @@ bool dcl_definitions(){
 		if(dcl_list()){
 			return true;
 		}
+		error();
 	}else{
 		return true;
 	}
@@ -84,6 +87,7 @@ bool procedure(){
 				}
 			}
 		}
+		error();
 	}
 	return false;
 }
@@ -106,6 +110,7 @@ bool dcl_list(){
 				}
 			}
 		}
+		error();
 	}else{
 		return true;
 	}
@@ -122,6 +127,7 @@ bool statement_list(){
 		if(statement_list()){
 			return true;
 		}
+		error();
 	}else{
 		return true;
 	}
@@ -143,7 +149,7 @@ bool statement(){
 }
 
 bool assignment_statement(){
-	//An assignment_statement is an identifier followed by ":=" followed by an expression followd by ";"
+	//An assignment_statement is an identifier followed by ":=" followed by an expression followed by ";"
 	//If we don't see all those in order, return false.
 	if(tok.tokenName == "Identifier"){
 		tok = getNext();
@@ -156,6 +162,7 @@ bool assignment_statement(){
 				}
 			}
 		}
+		error();
 	}
 
 	return false;
@@ -180,6 +187,7 @@ bool write_statement(){
 				}
 			}
 		}
+		error();
 	}
 
 	return false;
@@ -193,6 +201,7 @@ bool expression(){
 		if(more_expression()){
 			return true;
 		}
+		error();
 	}
 
 	return false;
@@ -208,8 +217,7 @@ bool more_expression(){
 				return true;
 			}
 		}
-
-		return false;
+		error();
 	}
 
 	return true;
@@ -221,6 +229,7 @@ bool term(){
 		if(more_term()){
 			return true;
 		}
+		error();
 	}
 	return false;
 }
@@ -235,7 +244,7 @@ bool more_term(){
 				return true;
 			}
 		}
-		return false;
+		error();
 	}
 
 	return true;
@@ -295,4 +304,5 @@ bool mulop(){
 void error(){
 	std::cout << "Error on line " << tok.lineNumber << std::endl;
 	std::cout << "Unexpected token: " << tok.lexeme << std::endl;
+	exit(EXIT_FAILURE);
 }
