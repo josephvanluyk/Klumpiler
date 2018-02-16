@@ -1,5 +1,7 @@
 #include "scanner.h"
 #include "stdlib.h"
+#include<iomanip>
+#include<vector>
 token tok(0, "", "");
 
 /*
@@ -26,22 +28,26 @@ bool factor();
 bool more_term();
 bool mulop();
 bool addop();
-
 void error();
+void initializeOutput();
+void addDeclares();
+void addLine(std::string label, std::string opcode, std::string operands, std::string comment);
+const std::string SEMICOLON = ";";
+std::vector<std::string> identifiers;
+std::string op;
+
+
+
+
+
 
 int main(){
 	sym = nextSym();
 	tok = getNext();
+	//Can we find a pal_program?
+	pal_program();
 
-	//Can we find a pal_progr	am?
-	bool parses = pal_program();
-
-	//If so, we're good. Otherwise, error()
-	if(parses){
-		std::cout << "Successfully parsed." << std::endl;
-	}else{
-		error();
-	}
+	exit(EXIT_SUCCESS);
 }
 
 bool pal_program(){
@@ -77,11 +83,14 @@ bool procedure(){
 	//A procedure is a begin lexeme followed by a statement_list followed by "end" followed by "."
 	//If we don't find all of those things in order, it's not a procedure.
 	if(tok.lexeme == "begin"){
+		initializeOutput();
 		tok = getNext();
 		if(statement_list()){
 			if(tok.lexeme == "end"){
 				tok = getNext();
 				if(tok.lexeme == "."){
+					addLine("", "ret", "", "");
+					addDeclares();
 					tok = getNext();
 					return true;
 				}
@@ -97,6 +106,7 @@ bool dcl_list(){
 	//Or it's nothing.
 	//If neither of those are the case, it's not a dcl_list.
 	if(tok.tokenName == "Identifier"){
+		identifiers.push_back(tok.lexeme);
 		tok = getNext();
 		if(tok.lexeme == ":"){
 			tok = getNext();
@@ -152,15 +162,27 @@ bool assignment_statement(){
 	//An assignment_statement is an identifier followed by ":=" followed by an expression followed by ";"
 	//If we don't see all those in order, return false.
 	if(tok.tokenName == "Identifier"){
+		std::string id = tok.lexeme;
+		bool notFound = true;
+		for(int i = 0; i < identifiers.size(); i++){
+			if(identifiers.at(i) == id){
+				notFound = false;
+			}
+		}
+		if(notFound){
+			error();
+		}
 		tok = getNext();
 		if(tok.lexeme == ":="){
 			tok = getNext();
 			if(expression()){
+				addLine("", "pop", "dword [_" + id + "_]", "Assign expression to " + id);
 				if(tok.lexeme == ";"){
 					tok = getNext();
 					return true;
 				}
 			}
+
 		}
 		error();
 	}
@@ -172,15 +194,22 @@ bool assignment_statement(){
 bool write_statement(){
 	//A write_statement is "writeln" followed by "(" followed by an identifier followed by ")" followed by ";".
 	//if we don't find all of those in order, return false.
+	std::string id;
 	if(tok.lexeme == "writeln"){
 		tok = getNext();
 		if(tok.lexeme == "("){
 			tok = getNext();
+			id = tok.lexeme;
 			if(tok.tokenName == "Identifier"){
 				tok = getNext();
 				if(tok.lexeme == ")"){
 					tok = getNext();
 					if(tok.lexeme == ";"){
+						addLine("", "push", "dword [_" + id + "_]", "");
+						addLine("", "push", "frmt", "");
+						addLine("", "call", "printf", "");
+						addLine("", "pop", "eax", "");
+						addLine("", "pop", "eax", "");
 						tok = getNext();
 						return true;
 					}
@@ -198,6 +227,7 @@ bool expression(){
 	//An expession is a term followed by a more_expression.
 		//If we don't find that in order, return false.
 	if(term()){
+
 		if(more_expression()){
 			return true;
 		}
@@ -211,8 +241,17 @@ bool more_expression(){
 	//A more_expression is an addop followed by a term followed by a more_expresion
 	//Or it's nothing.
 	//If we a see an addop not followed by a term and expression, return false.
+	std::string op = tok.lexeme;
 	if(addop()){
 		if(term()){
+			addLine("", "pop", "ebx", "");
+			addLine("", "pop", "eax", "");
+			if(op == "+"){
+				addLine("", "add", "eax, ebx", "");
+			}else{
+				addLine("", "sub", "eax, ebx", "");
+			}
+			addLine("", "push", "eax", "");
 			if(more_expression()){
 				return true;
 			}
@@ -238,8 +277,18 @@ bool more_term(){
 	//A more_term is a mulop followed by a factor followed by a more_term.
 	//Or it's nothing.
 	//If we a see am mulop but not a factor/more_term, return false.
+	std::string op = tok.lexeme;
 	if(mulop()){
 		if(factor()){
+			addLine("", "pop", "ebx", "");
+			addLine("", "pop", "eax", "");
+			if(op == "*"){
+				addLine("", "imul", "eax, ebx", "");
+			}else{
+				addLine("", "xor", "edx, edx", "");
+				addLine("", "div", "ebx", "");
+			}
+			addLine("", "push", "eax", "");
 			if(more_term()){
 				return true;
 			}
@@ -255,9 +304,11 @@ bool factor(){
 	//Or it's "(" followed by an expression followed by ")".
 	//If none of those work, return false.
 	if(tok.tokenName == "Identifier"){
+		addLine("", "push", "dword [_" + tok.lexeme + "_]", "");
 		tok = getNext();
 		return true;
 	}else if(tok.tokenName == "integer"){
+		addLine("", "push", tok.lexeme, "");
 		tok = getNext();
 		return true;
 	}else if(tok.lexeme == "("){
@@ -305,4 +356,42 @@ void error(){
 	std::cout << "Error on line " << tok.lineNumber << std::endl;
 	std::cout << "Unexpected token: " << tok.lexeme << std::endl;
 	exit(EXIT_FAILURE);
+}
+
+
+void addLine(std::string label, std::string opcode, std::string operands, std::string comment){
+  if (label != "")
+	 std::cout << std::setw(15) << std::left << label + ":";
+  else
+	 std::cout << std::setw(15) << std::left << " ";
+  if (opcode != "")
+	 std::cout << std::setw(10) << std::left << opcode;
+  else
+	 std::cout << std::setw(10) << std::left << " ";
+  if (operands != "")
+	 std::cout << std::setw(20) << std::left << operands;
+  else
+	 std::cout << std::setw(20) << std::left << " ";
+  if (comment != "")
+	 std::cout << "\t" << ";" <<  comment;
+  std::cout << std::endl;
+}
+
+void initializeOutput(){
+	addLine("", "global", "main", "");
+	addLine("", "extern", "printf", "");
+	addLine("", "section", ".text", "");
+	addLine("main", "", "", "");
+}
+
+void addDeclares(){
+
+	std::cout << std::endl;
+	addLine("", "section", ".data", "");
+	addLine("frmt", "db", "\"%d\", 0xA, 0", "");
+	addLine("", "section", ".bss", "");
+	for(int i = 0; i < identifiers.size(); i++){
+		addLine("_" + identifiers[i] + "_", "resb(4)", "", "");
+	}
+
 }
