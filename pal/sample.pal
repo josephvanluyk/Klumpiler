@@ -2,11 +2,21 @@ dcl
 	a : int;
 	b : int;
 	c : int;
+	d : int
+	e : int;
+	out : int;
 begin
-	a := 3;
-	b := 5*a - 2;
-	c := 10/2;
-	writeln(c);
+	a := 1;
+	b := 2;
+	c := 3;
+	d := 3;
+	e := 4;
+	a := a + d;
 	writeln(a);
-	writeln(b);
+	d := d*e;
+	writeln(d);
+	c := (a*b) + 4;
+	e := e*2;
+	writeln(e);
+
 end.

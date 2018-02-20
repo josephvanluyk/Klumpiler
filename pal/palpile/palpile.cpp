@@ -1,4 +1,4 @@
-#include "scanner.h"
+#include "../../scanner/scanner.h"
 #include "stdlib.h"
 #include<iomanip>
 #include<vector>
@@ -205,11 +205,11 @@ bool write_statement(){
 				if(tok.lexeme == ")"){
 					tok = getNext();
 					if(tok.lexeme == ";"){
-						addLine("", "push", "dword [_" + id + "_]", "");
+						addLine("", "push", "dword [_" + id + "_]", "***Begin Printing " + id + "***");
 						addLine("", "push", "frmt", "");
 						addLine("", "call", "printf", "");
 						addLine("", "pop", "eax", "");
-						addLine("", "pop", "eax", "");
+						addLine("", "pop", "eax", "***End Printing " + id + "***");
 						tok = getNext();
 						return true;
 					}
@@ -244,7 +244,7 @@ bool more_expression(){
 	std::string op = tok.lexeme;
 	if(addop()){
 		if(term()){
-			addLine("", "pop", "ebx", "");
+			addLine("", "pop", "ebx", "Prepare for addop");
 			addLine("", "pop", "eax", "");
 			if(op == "+"){
 				addLine("", "add", "eax, ebx", "");
@@ -280,7 +280,7 @@ bool more_term(){
 	std::string op = tok.lexeme;
 	if(mulop()){
 		if(factor()){
-			addLine("", "pop", "ebx", "");
+			addLine("", "pop", "ebx", "Prepare for mulop");
 			addLine("", "pop", "eax", "");
 			if(op == "*"){
 				addLine("", "imul", "eax, ebx", "");
@@ -353,8 +353,13 @@ bool mulop(){
 
 //If there's an error, report the line number and where we encountered something unexpected
 void error(){
-	std::cout << "Error on line " << tok.lineNumber << std::endl;
-	std::cout << "Unexpected token: " << tok.lexeme << std::endl;
+	std::cerr << "Error on line " << tok.lineNumber << std::endl;
+	std::cerr << tok.lineNumber - 1 << ": " << lineOne;
+	if(tok.lineNumber == 0){
+		std::cerr << std::endl;
+	}
+	std::cerr << tok.lineNumber << ": " << lineTwo << std::endl;
+	std::cerr << "Unexpected token: " << tok.lexeme << std::endl;
 	exit(EXIT_FAILURE);
 }
 

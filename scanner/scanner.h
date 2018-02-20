@@ -5,6 +5,8 @@
 
 std::string nextSym();
 int n = 0;
+std::string lineOne;
+std::string lineTwo;
 std::string reservedWords[] = {"global", "const", "number", "decimal", "cstring", "type",
 								"array", "of", "record", "end", "dcl", "bool", "int", "real",
 								"string", "proc", "var", "procedure", "begin", "end", "read", "write",
@@ -18,8 +20,11 @@ token getNext(void){
 //removewhitespace:
 	//Remove all whitespace
 	while((sym == " ") || (sym == "\n") || (sym == "	")){
+		lineTwo = lineTwo + sym;
 		if(sym == "\n"){		//If there's a newline, increment line-count
 			n++;
+			lineOne = lineTwo;
+			lineTwo = "";
 		}
 		//std::cout << "I'm right here" << std::endl;
 		sym = nextSym();
@@ -104,14 +109,14 @@ token getNext(void){
 			sym = nextSym();
 		}
 		if(sym == "."){							//If it's a decimal, then we're looking at a real
-			tokenName = "real";
+			tokenName = "decimal";
 			sym = nextSym();
 			while(isdigit(sym.at(0))){
 				literal += sym;
 				sym = nextSym();
 			}
 		}else{									//Otherwise, it's integer
-			tokenName = "integer";
+			tokenName = "number";
 		}
 		lexeme = literal;						//In either case, the instance of the token is the literal
 	}else if(sym == "."){				//A symbol of "." represents the end of the program
@@ -155,6 +160,7 @@ token getNext(void){
 			lexeme = ">";
 		}
 	}
+	lineTwo = lineTwo + lexeme;
 	return token(n, tokenName, lexeme);
 }
 
