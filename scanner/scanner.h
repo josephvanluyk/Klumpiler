@@ -4,19 +4,20 @@
 #include<vector>
 
 std::string nextSym();
-int n = 0;
+int n = 1;
 std::string lineOne;
 std::string lineTwo;
 std::string reservedWords[] = {"global", "const", "number", "decimal", "cstring", "type",
 								"array", "of", "record", "end", "dcl", "bool", "int", "real",
 								"string", "proc", "var", "procedure", "begin", "end", "read", "write",
-								"readln", "writeln", "call", "return", "goto", "do", "if", "then", "else", "while"
+								"readln", "writeln", "call", "return", "goto", "do", "if", "then", "else", "while",
 								"case", "default", "for", "to", "downto", "next", "break", "not", "or", "and"};
 std::string sym;
 
 
 //REQUIRES: sym to be set up with nextSym()
 token getNext(void){
+top:
 //removewhitespace:
 	//Remove all whitespace
 	while((sym == " ") || (sym == "\n") || (sym == "	")){
@@ -28,6 +29,18 @@ token getNext(void){
 		}
 		//std::cout << "I'm right here" << std::endl;
 		sym = nextSym();
+	}
+	if(sym == "{"){
+		while(sym != "}"){
+			sym = nextSym();
+			if(sym == "\n"){
+				n++;
+				lineOne = lineTwo;
+				lineTwo = "";
+			}
+		}
+		sym = nextSym();
+		goto top;
 	}
 	//Remove comments
 	/*if(sym == "{"){
@@ -110,6 +123,7 @@ token getNext(void){
 		}
 		if(sym == "."){							//If it's a decimal, then we're looking at a real
 			tokenName = "decimal";
+			literal += sym;
 			sym = nextSym();
 			while(isdigit(sym.at(0))){
 				literal += sym;

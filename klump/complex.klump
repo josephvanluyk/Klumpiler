@@ -55,7 +55,7 @@ begin {main}
   call put (c);
   writeln (mods,modulus(a));
   writeln (mods,modulus(b));
-end   {main}
+end
 
 procedure get;
 begin {get}

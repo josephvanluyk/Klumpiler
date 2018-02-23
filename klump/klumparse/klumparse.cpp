@@ -1,4 +1,5 @@
 #include "../../scanner/scanner.h"
+#include "stdlib.h"
 const int FOUND = 1;
 const int DOES_NOT_MATCH = 0;
 const int FAILED = -1;
@@ -66,6 +67,19 @@ int lval();
 int func_ref();
 int qualifier();
 bool match_token(std::string a, std::string b);
+void error();
+
+void error(){
+	std::cerr << "Error on line " << tok.lineNumber << std::endl;
+	std::cerr << tok.lineNumber - 1 << ": " << lineOne;
+	if(tok.lineNumber == 0){
+		std::cerr << std::endl;
+	}
+	std::cerr << tok.lineNumber << ": " << lineTwo << std::endl;
+	std::cerr << "Unexpected token: " << tok.lexeme << std::endl;
+	std::cerr << "TokenName: " << tok.tokenName << std::endl;
+	exit(EXIT_FAILURE);
+}
 
 bool match_token(std::string a, std::string b){
 	if(a == b){
@@ -81,10 +95,12 @@ int main(){
 	int parses = klump_program();
 	if(parses == FOUND){
 		std::cout << "Parsed Successfully" << std::endl;
+	}else{
+		error();
 	}
 }
 
-
+//<klump_program> -> <global_definitions><procedure_list>.
 int klump_program(){
 	if(global_definitions() == FOUND){
 		if(procedure_list() == FOUND){
@@ -92,48 +108,43 @@ int klump_program(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
-
+//<global_definitions> -> GLOBAL <const_definitions> <type_definitons> <dcl_definitions> <proc_declarations> | ""
 int global_definitions(){
-	if(tok.lexeme == "global"){
-		tok = getNext();
+	if(match_token(tok.lexeme, "global")){
 		if(const_definitions() == FOUND && type_definitions() == FOUND && dcl_definitions() == FOUND && proc_declarations() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
-	}else{
-		return FOUND;
+		error();
 	}
+	return FOUND;
 }
 
-
+//<const_definitions> -> CONST <const_list> | ""
 int const_definitions(){
-	if(tok.lexeme == "const"){
-		tok = getNext();
-		if(const_list()){
+	if(match_token(tok.lexeme, "const")){
+		if(const_list() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return FOUND;
 }
 
 
 int const_list(){
-	while(match_token(tok.lexeme, "{")){
-		if(match_token(tok.tokenName, "Identifier")
-			&& match_token(tok.lexeme, ":")
+	while(match_token(tok.tokenName, "Identifier")){
+		if(match_token(tok.lexeme, ":")
 			&& _const() == FOUND
-			&& match_token(tok.lexeme, ";")
-			&& match_token(tok.lexeme, "}"))
+			&& match_token(tok.lexeme, ";"))
 		{
 
 		}else{
-			return FAILED;
+			error();
 		}
 	}
 	return FOUND;
@@ -152,21 +163,19 @@ int type_definitions(){
 		if(type_list() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return FOUND;
 }
 
 int type_list(){
-	while(match_token(tok.lexeme, "{")){
-		if(match_token(tok.tokenName, "Identifier")
-			&& match_token(tok.lexeme, ":")
+	while(match_token(tok.tokenName, "Identifier")){
+		if(match_token(tok.lexeme, ":")
 			&& struct_type() == FOUND
-			&& match_token(tok.lexeme, ";")
-			&& match_token(tok.lexeme, "}")){
+			&& match_token(tok.lexeme, ";")){
 
 			}else{
-				return FAILED;
+				error();
 			}
 	}
 	return FOUND;
@@ -174,12 +183,11 @@ int type_list(){
 
 
 int struct_type(){
-	int a = array_type();
-	if(a == DOES_NOT_MATCH){
+	if(array_type() == DOES_NOT_MATCH){
 		return record_type();
 	}
 
-	return a;
+	return FOUND;
 }
 
 
@@ -192,7 +200,7 @@ int array_type(){
 		&& dcl_type() == FOUND){
 			return FOUND;
 		}else{
-			return FAILED;
+			error();
 		}
 	}
 	return DOES_NOT_MATCH;
@@ -204,22 +212,20 @@ int record_type(){
 		if(fld_list() == FOUND && match_token(tok.lexeme, "end")){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
 
 int fld_list(){
-	while(match_token(tok.lexeme, "{")){
-		if(match_token(tok.tokenName, "Identifier")
-			&& match_token(tok.lexeme, ":")
+	while(match_token(tok.tokenName, "Identifier")){
+		if(match_token(tok.lexeme, ":")
 			&& dcl_type() == FOUND
-			&& match_token(tok.lexeme, ";")
-			&& match_token(tok.lexeme, "}")){
+			&& match_token(tok.lexeme, ";")){
 
 			}else{
-				return FAILED;
+				error();
 			}
 	}
 	return FOUND;
@@ -230,23 +236,21 @@ int dcl_definitions(){
 		if(dcl_list() == FOUND){
 			return FOUND;
 		}else{
-			return FAILED;
+			error();
 		}
 	}
-	return DOES_NOT_MATCH;
+	return FOUND;
 }
 
 
 int dcl_list(){
-	while(match_token(tok.lexeme, "{")){
-		if(match_token(tok.tokenName, "Identifier")
-			&& match_token(tok.lexeme, ":")
+	while(match_token(tok.tokenName, "Identifier")){
+		if(match_token(tok.lexeme, ":")
 			&& dcl_type() == FOUND
-			&& match_token(tok.lexeme, ";")
-			&& match_token(tok.lexeme, "}")){
+			&& match_token(tok.lexeme, ";")){
 
 			}else{
-				return FAILED;
+				error();
 			}
 	}
 
@@ -254,11 +258,8 @@ int dcl_list(){
 }
 
 int dcl_type(){
-	int a = atomic_type();
-	if(a == FOUND){
+	if(atomic_type() == FOUND){
 		return FOUND;
-	}else if(a == FAILED){
-		return FAILED;
 	}else{
 		if(match_token(tok.tokenName, "Identifier")){
 			return FOUND;
@@ -271,7 +272,7 @@ int dcl_type(){
 
 int atomic_type(){
 	if(match_token(tok.lexeme, "bool") || match_token(tok.lexeme, "real")
-		|| match_token(tok.lexeme, "real") || match_token(tok.lexeme, "string")){
+		|| match_token(tok.lexeme, "int") || match_token(tok.lexeme, "string")){
 			return FOUND;
 		}
 	return DOES_NOT_MATCH;
@@ -282,30 +283,30 @@ int proc_declarations(){
 		if(signature_list() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return FOUND;
 }
 
 int signature_list(){
-	while(match_token(tok.lexeme, "{")){
-		if(match_token(tok.lexeme, ";")
-			&& proc_signature() == FOUND
-			&& match_token(tok.lexeme, "}")){
-
+	if(proc_signature() == FOUND){
+		while(match_token(tok.lexeme, ";")){
+			if(proc_signature() == FOUND){
 			}else{
-				return FAILED;
+				return FOUND;
 			}
+		}
+
 	}
 	return FOUND;
 }
 
 int proc_signature(){
 	if(match_token(tok.tokenName, "Identifier")){
-		if(formal_args() == FOUND && return_type() == FOUND && match_token(tok.lexeme, ";")){
+		if(formal_args() == FOUND && return_type() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -317,35 +318,36 @@ int formal_args(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
+
 	}
 	return FOUND;
 }
 
 int formal_arg_list(){
-	int a = formal_arg();
-	if(a == FOUND){
+
+	if(formal_arg() == FOUND){
 		while(match_token(tok.lexeme, ",")){
-			if(actual_arg() == FOUND && match_token(tok.lexeme, "}")){
+			if(formal_arg() == FOUND){
 
 			}else{
-				return FAILED;
+				error();
 			}
 		}
 		return FOUND;
 	}
-	return a;
+	return FOUND;
+
 }
 
 int formal_arg(){
-	int a = call_by();
-	if(a == FOUND){
+	if(call_by() == FOUND){
 		if(match_token(tok.tokenName, "Identifier") && match_token(tok.lexeme, ":") && dcl_type() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
-	return a;
+	return DOES_NOT_MATCH;
 }
 
 int call_by(){
@@ -357,9 +359,11 @@ int call_by(){
 }
 
 int return_type(){
-	int a = atomic_type();
-	if(a == FAILED){
-		return FAILED;
+	if(match_token(tok.lexeme, ":")){
+		if(atomic_type() == FOUND){
+			return FOUND;
+		}
+		error();
 	}
 	return FOUND;
 }
@@ -371,23 +375,22 @@ int actual_args(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
 int actual_arg_list(){
-	int a = actual_arg();
-	if(a == FOUND){
-		while(match_token(tok.lexeme, "{")){
-			if(match_token(tok.lexeme, ",") && actual_arg() == FOUND && match_token(tok.lexeme, "}")){
-
+	if(actual_arg() == FOUND){
+		while(match_token(tok.lexeme, ",") ){
+			if(actual_arg() == FOUND){
 			}else{
-				return FAILED;
+				error();
 			}
 		}
+		return FOUND;
 	}
-	return a;
+	return DOES_NOT_MATCH;
 
 }
 
@@ -396,30 +399,19 @@ int actual_arg(){
 }
 
 int procedure_list(){
-	bool pass = false;
-	while(match_token(tok.lexeme, "{")){
-		if(procedure() == FOUND){
-			if(match_token(tok.lexeme, "}")){
-				pass = true;
-			}
-		}
-		if(pass){
-			pass = false;
-		}else{
-			return FAILED;
-		}
+	while(procedure() == FOUND){
 	}
 	return FOUND;
 }
 
 int procedure(){
-	int a = proc_head();
-	if(a == FOUND){
+	if(proc_head() == FOUND){
 		if(proc_body() == FOUND){
 			return FOUND;
 		}
+		error();
 	}
-	return a;
+	return DOES_NOT_MATCH;
 }
 
 int proc_head(){
@@ -429,120 +421,117 @@ int proc_head(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
-int statement_list(){
-	bool pass = false;
-	while(match_token(tok.lexeme, "{")){
-		if(statement() == FOUND){
-			if(match_token(tok.lexeme, "}")){
-				pass = true;
+int proc_body(){
+	if(dcl_definitions() == FOUND){
+		if(match_token(tok.lexeme, "begin")){
+			if(statement_list() == FOUND){
+				if(match_token(tok.lexeme, "end")){
+					return FOUND;
+				}
 			}
 		}
-		if(!pass){
-			return FAILED;
-		}else{
-			pass = false;
+		error();
 		}
+	return DOES_NOT_MATCH;
+}
+int statement_list(){
+	while(statement() == FOUND){
+
 	}
 	return FOUND;
 }
-
 int statement(){
-	int a = label();
-	if(a == FOUND){
+	if(label() == FOUND){
 		if(exec_statement() == FOUND){
 			return FOUND;
 		}
-		return FAILED;
+		return DOES_NOT_MATCH;
 	}
-	return a;
+	return DOES_NOT_MATCH;
 }
-
 int label(){
 	if(match_token(tok.lexeme, "#")){
 		if(match_token(tok.tokenName, "number")){
 			return FOUND;
 		}
-		return FAILED;
+		error();
 	}
 	return FOUND;
 }
 
 int exec_statement(){
+
 	int result = read_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = write_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
-
 	result = assign_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
-
 	result = call_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = return_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = goto_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = empty_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = compound_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = if_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = while_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
 
 	result = case_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
-
 	result = for_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
+		return result;
+	}
+	result = next_statement();
+	if(result == FOUND){
 		return result;
 	}
 
-	result = next_statement();
-	if(result == FOUND || result == FAILED){
-		return result;
-	}
 
 	result = break_statement();
-	if(result == FOUND || result == FAILED){
+	if(result == FOUND){
 		return result;
 	}
-
 	return DOES_NOT_MATCH;
 }
 
@@ -554,7 +543,7 @@ int read_statement(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -566,25 +555,26 @@ int write_statement(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
 
 int assign_statement(){
-	int a = lval();
-	if(a == FOUND){
-		if(match_token(tok.lexeme, ":=")){
-			if(expression() == FOUND){
-				if(match_token(tok.lexeme, ";")){
-					return FOUND;
+	if(match_token(tok.tokenName, "Identifier")){
+		if(qualifier() == FOUND){
+			if(match_token(tok.lexeme, ":=")){
+				if(expression() == FOUND){
+					if(match_token(tok.lexeme, ";")){
+						return FOUND;
+					}
 				}
 			}
 		}
-		return FAILED;
+		error();
 	}
-	return a;
+	return DOES_NOT_MATCH;
 }
 
 int call_statement(){
@@ -596,23 +586,23 @@ int call_statement(){
 				}
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
 
 int return_statement(){
 	if(match_token(tok.lexeme, "return")){
-		if(match_token(tok.lexeme, "[")){
+
 			if(expression() == FOUND){
-				if(match_token(tok.lexeme, "]")){
+
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
-				}
+
 			}
-		}
-		return FAILED;
+
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -624,7 +614,7 @@ int goto_statement(){
 				return FOUND;
 			}
 		}
-		return FAILED;
+		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -634,4 +624,326 @@ int empty_statement(){
 		return FOUND;
 	}
 	return DOES_NOT_MATCH;
+}
+int compound_statement(){
+	if(match_token(tok.lexeme, "do")){
+		if(match_token(tok.lexeme, ";")){
+			if(statement_list() == FOUND){
+				if(match_token(tok.lexeme, "end")){
+					if(match_token(tok.lexeme, ";")){
+						return FOUND;
+					}
+				}
+			}
+		}
+		error();
+	}
+
+	return DOES_NOT_MATCH;
+}
+
+
+int if_statement(){
+	if(match_token(tok.lexeme, "if")){
+		if(match_token(tok.lexeme, "(")){
+			if(comparison() == FOUND){
+				if(match_token(tok.lexeme, ")")){
+					if(match_token(tok.lexeme, "then")){
+						if(statement() == FOUND){
+							if(else_clause() == FOUND){
+								return FOUND;
+							}
+						}
+					}
+				}
+			}
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int else_clause(){
+	if(match_token(tok.lexeme, "else")){
+		if(statement() == FOUND){
+			return FOUND;
+		}
+		error();
+	}
+	return FOUND;
+}
+
+int while_statement(){
+	if(match_token(tok.lexeme, "while")){
+		if(match_token(tok.lexeme, "(")){
+			if(comparison() == FOUND){
+				if(match_token(tok.lexeme, ")")){
+					if(compound_statement() == FOUND){
+						return FOUND;
+					}
+				}
+			}
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int case_statement(){
+	if(match_token(tok.lexeme, "case")){
+		if(match_token(tok.lexeme, "(")){
+			if(expression() == FOUND){
+				if(match_token(tok.lexeme, ")")){
+					if(case_list() == FOUND){
+						return FOUND;
+					}
+				}
+			}
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int case_list(){
+	bool pass = false;
+	bool firstpass = false;
+	while(unary() == FOUND){
+		firstpass = true;
+		if(match_token(tok.tokenName, "number")){
+			if(match_token(tok.lexeme, ":")){
+				if(statement() == FOUND){
+					pass = true;
+				}
+			}
+		}
+		if(pass){
+			pass = !pass;
+		}else{
+			error();
+		}
+
+	}
+
+	if(match_token(tok.lexeme, "default")){
+		if(match_token(tok.lexeme, ":")){
+			if(statement() == FOUND){
+				return FOUND;
+			}
+		}
+		error();
+	}
+	if(firstpass){
+		error();
+	}
+	return DOES_NOT_MATCH;
+
+}
+
+int for_statement(){
+	if(match_token(tok.lexeme, "for")){
+		if(match_token(tok.tokenName, "Identifier")){
+			if(match_token(tok.lexeme, ":=")){
+				if(expression() == FOUND){
+					if(match_token(tok.lexeme, "to") || match_token(tok.lexeme, "downto")){
+						if(expression() == FOUND){
+							if(statement() == FOUND){
+								return FOUND;
+							}
+						}
+					}
+				}
+			}
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int next_statement(){
+	if(match_token(tok.lexeme, "next")){
+		if(match_token(tok.lexeme, ";")){
+			return FOUND;
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int break_statement(){
+	if(match_token(tok.lexeme, "break")){
+		if(match_token(tok.lexeme, ";")){
+			return FOUND;
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int expression(){
+	return comparison();
+}
+
+int comparison(){
+	if(simple_expression() == FOUND){
+		while(compop() == FOUND){
+			if(simple_expression() == FOUND){
+
+			}else{
+				error();
+			}
+		}
+		return FOUND;
+	}
+	return DOES_NOT_MATCH;
+
+}
+
+int simple_expression(){
+	bool pass = false;
+	if(unary() == FOUND){
+		if(term() == FOUND){
+			while(addop() == FOUND){
+				if(term() == FOUND){
+					pass = true;
+				}else{
+					error();
+				}
+			}
+			return FOUND;
+		}
+		error();
+	}
+	return DOES_NOT_MATCH;
+}
+
+int term(){
+
+	if(factor() == FOUND){
+		while(mulop() == FOUND){
+			if(factor() == FOUND){
+			}else{
+				error();
+			}
+		}
+		return FOUND;
+	}
+	return DOES_NOT_MATCH;
+}
+
+int factor(){
+	int result;
+	result = _const();
+	if(result == FOUND || result == FAILED){
+		return result;
+	}
+	if(match_token(tok.lexeme, "(")){
+		if(expression() == FOUND){
+			if(match_token(tok.lexeme, ")")){
+				return FOUND;
+			}
+		}
+		error();
+	}
+
+	if(match_token(tok.lexeme, "not")){
+		if(factor() == FOUND){
+			return FOUND;
+		}
+		error();
+	}
+
+
+	/* Lval or fun_ref? */
+	/* First token is an Identifier...*/
+	if(match_token(tok.tokenName, "Identifier")){
+		/*If it's followed by a qualifier, we have an lval*/
+		if(actual_args() == FOUND){
+			return FOUND;
+		}else if(qualifier() == FOUND){
+			return FOUND;
+		}
+	}
+
+	return DOES_NOT_MATCH;
+}
+
+
+int compop(){
+	if(match_token(tok.lexeme, "=")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "<>")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "<")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, ">")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, ">=")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "<=")){
+		return FOUND;
+	}
+
+	return DOES_NOT_MATCH;
+}
+
+int addop(){
+	if(match_token(tok.lexeme, "+")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "-")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "or")){
+		return FOUND;
+	}
+
+	return DOES_NOT_MATCH;
+}
+
+int mulop(){
+	if(match_token(tok.lexeme, "*")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "/")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "%")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "and")){
+		return FOUND;
+	}
+
+	return DOES_NOT_MATCH;
+}
+
+int unary(){
+	if(match_token(tok.lexeme, "+")){
+		return FOUND;
+	}else if(match_token(tok.lexeme, "-")){
+		return FOUND;
+	}else{
+		return FOUND;
+	}
+}
+
+
+int qualifier(){
+	if(match_token(tok.lexeme, "[")){
+		if(expression() == FOUND){
+			if(match_token(tok.lexeme, "]")){
+				if(qualifier() == FOUND){
+					return FOUND;
+				}
+			}
+		}
+		error();
+	}
+
+	if(match_token(tok.lexeme, ".")){
+		if(match_token(tok.tokenName, "Identifier")){
+			if(qualifier() == FOUND){
+				return FOUND;
+			}
+		}
+		error();
+	}
+
+	return FOUND;
 }

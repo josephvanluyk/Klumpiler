@@ -1,0 +1,15 @@
+while
+while
+while
+while
+for
+if
+while
+case
+default
+for
+to
+downto
+next
+break
+ {hi}
