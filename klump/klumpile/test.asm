@@ -4,7 +4,7 @@ extern printf
 section .text
 main:
 	fld dword [num]
-	sub esp, 8
+	sub	 esp, 8
 	fstp qword [esp]
 	push msg
 	call printf
