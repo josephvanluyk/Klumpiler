@@ -1,8 +1,10 @@
 #include "../../scanner/scanner.h"
 #include "stdlib.h"
+#include<stack>
 #include<iomanip>
 #include<vector>
-
+#include<sstream>
+using namespace std;
 //Set up scanner
 token tok(0, "", "");
 
@@ -15,12 +17,16 @@ token tok(0, "", "");
 */
 
 struct Identifier{
-	std::string kName;
-	std::string aName;
-	bool initialized;
-	std::string type;
+	string kName;
+	string aName;
+	string type;
 };
 
+struct Literal{
+	string name;
+	string value;
+	string type;
+};
 
 /*
 *
@@ -96,10 +102,13 @@ int unary();
 int lval();
 int func_ref();
 int qualifier();
-bool match_token(std::string a, std::string b);
+bool match_token(string a, string b);
 void error();
-void addLine(std::string label, std::string opcode, std::string operands, std::string comment);
-Identifier findIdentifier(std::string id);
+void addLine(string label, string opcode, string operands, string comment);
+Identifier findIdentifier(string id);
+string generateLabel();
+void printIntro();
+void printOutro();
 
 /*
 *
@@ -118,13 +127,16 @@ Identifier findIdentifier(std::string id);
 *
 */
 
-std::string const REAL = "real";
-std::string const INT = "int";
-std::string const BOOL = "bool";
+string const REAL = "real";
+string const INT = "int";
+string const BOOL = "bool";
+string const STRING = "string";
 const int FOUND = 1;
 const int DOES_NOT_MATCH = 0;
 const int FAILED = -1;
-std::vector<Identifier> identifiers;
+vector<Identifier> identifiers;
+stack<string> typeStack;
+vector<Literal> literals;
 
 /*
 *
@@ -133,18 +145,18 @@ std::vector<Identifier> identifiers;
 */
 
 void error(){
-	std::cerr << "Error on line " << tok.lineNumber << std::endl;
-	std::cerr << tok.lineNumber - 1 << ": " << lineOne;
+	cerr << "Error on line " << tok.lineNumber << endl;
+	cerr << tok.lineNumber - 1 << ": " << lineOne;
 	if(tok.lineNumber == 0){
-		std::cerr << std::endl;
+		cerr << endl;
 	}
-	std::cerr << tok.lineNumber << ": " << lineTwo << std::endl;
-	std::cerr << "Unexpected token: " << tok.lexeme << std::endl;
-	std::cerr << "TokenName: " << tok.tokenName << std::endl;
+	cerr << tok.lineNumber << ": " << lineTwo << endl;
+	cerr << "Unexpected token: " << tok.lexeme << endl;
+	cerr << "TokenName: " << tok.tokenName << endl;
 	exit(EXIT_FAILURE);
 }
 
-bool match_token(std::string a, std::string b){
+bool match_token(string a, string b){
 	if(a == b){
 		tok = getNext();
 		return true;
@@ -155,12 +167,9 @@ bool match_token(std::string a, std::string b){
 int main(){
 	sym = nextSym();
 	tok = getNext();
-	int parses = klump_program();
-	if(parses == FOUND){
-		std::cout << "Parsed Successfully" << std::endl;
-	}else{
-		error();
-	}
+	printIntro();
+	klump_program();
+	printOutro();
 }
 
 //<klump_program> -> <global_definitions><procedure_list>.
@@ -200,22 +209,70 @@ int const_definitions(){
 
 
 int const_list(){
+	token t = tok;
+	bool pass = false;;
+	//Identifier : _const;
 	while(match_token(tok.tokenName, "Identifier")){
-		if(match_token(tok.lexeme, ":")
-			&& _const() == FOUND
-			&& match_token(tok.lexeme, ";"))
-		{
+		if(match_token(tok.lexeme, ":")){
+			if(_const() == FOUND){
+				Identifier id;
+				id.kName = t.lexeme;
+				id.aName = "_" + t.lexeme + "_";
+				if(typeStack.top() == INT){
+					id.type = INT;
+					addLine("", "pop", "[" + id.aName + "]", "Assign int value to const variable");
+				}else if(typeStack.top() == STRING){
+					id.type = STRING;
+					addLine("", "pop", "[" + id.aName + "]", "Assign string address to const variable");
+				}else if(typeStack.top() == REAL){
+					id.type = REAL;
+					addLine("", "pop", "[" + id.aName + "]", "Assign first half of real to const variable");
+					addLine("", "pop", "[" + id.aName + " + 4]", "");
+				}
+				typeStack.pop();
+				identifiers.push_back(id);
+				if(match_token(tok.lexeme, ";")){
+					t = tok;
+					pass = true;
+				}
+			}
+		}
 
+		if(pass){
+			pass = false;
 		}else{
 			error();
 		}
+
 	}
 	return FOUND;
 }
 
 
 int _const(){
+	token t = tok;
 	if(match_token(tok.tokenName, "number") || match_token(tok.tokenName, "decimal") || match_token(tok.tokenName, "cstring")){
+		if(t.tokenName == "number"){
+			addLine("", "push", t.lexeme, "Push int literal to stack");
+			typeStack.push(INT);
+		}else if(t.tokenName == "cstring"){
+			Literal l;
+			l.name = generateLabel();
+			l.value = t.lexeme;
+			l.type = STRING;
+			literals.push_back(l);
+			addLine("", "push", l.name, "Push address of string literal to stack");
+			typeStack.push(STRING);
+		}else if(t.tokenName == "decimal"){
+			Literal l;
+			l.name = generateLabel();
+			l.value = t.lexeme;
+			l.type = REAL;
+			literals.push_back(l);
+			addLine("", "push", "[" + l.name + " + 4]", "Push value of real literal to stack in two parts");
+			addLine("", "push", "[" + l.name + "]", "");
+			typeStack.push(REAL);
+		}
 		return FOUND;
 	}
 	return DOES_NOT_MATCH;
@@ -626,15 +683,12 @@ int write_statement(){
 
 int assign_statement(){
 
-	std::string id = tok.lexeme;								//Acquire the identifier we're assigning to.
-	Identifier lval = findIdentifier(id);
 	if(match_token(tok.tokenName, "Identifier")){
 
 		if(qualifier() == FOUND){								//Are we dealing with an Array/Record?
 			if(match_token(tok.lexeme, ":=")){
 				if(expression() == FOUND){						//Find an expression and push it to the stack
 					if(match_token(tok.lexeme, ";")){
-						addLine("", "pop", "dword " + lval.aName, "Assign expression to " + lval.aName);
 						return FOUND;
 					}
 				}
@@ -1017,35 +1071,90 @@ int qualifier(){
 }
 
 
-void addLine(std::string label, std::string opcode, std::string operands, std::string comment){
+void addLine(string label, string opcode, string operands, string comment){
   if (label != "")
-	 std::cout << std::setw(15) << std::left << label + ":";
+	 cout << setw(15) << left << label + ":";
   else
-	 std::cout << std::setw(15) << std::left << " ";
+	 cout << setw(15) << left << " ";
   if (opcode != "")
-	 std::cout << std::setw(10) << std::left << opcode;
+	 cout << setw(10) << left << opcode;
   else
-	 std::cout << std::setw(10) << std::left << " ";
+	 cout << setw(10) << left << " ";
   if (operands != "")
-	 std::cout << std::setw(20) << std::left << operands;
+	 cout << setw(20) << left << operands;
   else
-	 std::cout << std::setw(20) << std::left << " ";
+	 cout << setw(20) << left << " ";
   if (comment != "")
-	 std::cout << "\t" << ";" <<  comment;
-  std::cout << std::endl;
+	 cout << "\t" << ";" <<  comment;
+  cout << endl;
 }
 
 
 
-Identifier findIdentifier(std::string id){
+Identifier findIdentifier(string id){
 	for(int i = 0; i < identifiers.size(); i++){
 		if(identifiers.at(i).kName == id){
 			return identifiers.at(i);
 		}
 	}
 
-	std::cout << "Undeclared Identifier: " << id << std::endl;
+	cout << "Undeclared Identifier: " << id << endl;
 	error();
 
 	return identifiers.at(0);
+}
+
+
+string generateLabel(){
+	static int k = 0;
+	stringstream ss;
+	ss << "Label" << k;
+	string out;
+	ss >> out;
+	k++;
+	return out;
+}
+
+
+void printIntro(){
+	addLine("", "global", "main", "");
+	addLine("", "extern", "printf", "");
+	addLine("", "section", ".text", "");
+	addLine("main", "", "", "");
+}
+void printOutro(){
+	addLine("", "", "", "");
+	addLine("", "section", ".data", "");
+	addLine("realFrmt", "db", "\"%f\", 0xA, 0", "Print real with \\n");
+	addLine("intFrmt", "db", "\"%d\" 0xA, 0", "Print int with \\n");
+	/*
+		Print literals
+	*/
+	Literal l;
+	for(int i = 0; i < literals.size(); i++){
+		l = literals.at(i);
+		string size;
+		if(l.type == REAL){
+			size = "dq";
+		}else if(l.type == STRING){
+			size = "db";
+		}
+
+		addLine(l.name, size, l.value, "");
+
+	}
+	addLine("", "", "", "");
+	addLine("", "section", ".bss", "");
+	for(int i = 0; i < identifiers.size(); i++){
+		Identifier id = identifiers.at(i);
+		string size;
+		if(id.type == REAL){
+			size = "8";
+		}else{
+			size = "4";
+		}
+		addLine(id.aName, "resb(" + size + ")", "", "");
+	};
+
+
 }
