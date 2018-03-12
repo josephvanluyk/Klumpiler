@@ -1,5 +1,8 @@
 global
 const
+	a : 1.3;
+	b : 'this is a string';
+	c : 2;
 type
 proc
 procedure main;
@@ -7,8 +10,8 @@ dcl
 	x	:	int;
 	y	:	int;
 begin
-	x := 2;
+	x := -2;
 	y := 3;
 	x := 4*(x + y);
-	writeln(x);
+	writeln(x, y, b);
 end.
