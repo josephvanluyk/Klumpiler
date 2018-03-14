@@ -3,29 +3,7 @@ extern printf
 
 section .text
 main:
-	push 2
-	fild dword [esp]
-	sub esp, 4
-	fstp qword [esp]
-	push msg
-	call printf
-	add esp, 4
-
-	push dword [num + 4]
-	push dword [num]
-	push msg
-	call printf
-	add esp, 4
-
-	fld qword [esp]
-	fld qword [esp + 8]
-	fcom
-	je	end
-	push dword [num + 4]
-	push dword [num]
-	push msg
-	call printf
-	add esp, 12
+	
 
 end:
 

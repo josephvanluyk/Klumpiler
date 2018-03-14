@@ -719,13 +719,54 @@ int exec_statement(){
 
 
 int read_statement(){
+	string call = tok.lexeme;
 	if(match_token(tok.lexeme, "read") || match_token(tok.lexeme, "readln")){
-		if(actual_args() == FOUND){
-			if(match_token(tok.lexeme, ";")){
-				return FOUND;
+		if(match_token(tok.lexeme, "(")){
+			string id = tok.lexeme;
+			while(match_token(tok.tokenName, "Identifier")){
+				Identifier idToWrite;
+				for(int i = 0; i < identifiers.size(); i++){
+					Identifier potential = identifiers.at(i);
+					if(potential.kName == id){
+						idToWrite = potential;
+					}
+				}
+
+				addLine("", "push", idToWrite.aName, "Push address to input variable");
+				if(idToWrite.type == INT){
+					addLine("", "push", "intFrmtIn", "");
+				}else if(idToWrite.type == REAL){
+					addLine("", "push", "realFrmtIn", "");
+				}else if(idToWrite.type == STRING){
+					addLine("", "push", "stringFrmtIn", "");
+				}else{
+					cerr << "Cannot input type" << idToWrite.type << endl;
+					error();
+				}
+
+				addLine("", "call", "scanf", "Retrieve input from user");
+				addLine("", "add", "esp, 8", "Remove arguments from stack");
+
+				if(!match_token(tok.lexeme, ",")){
+					if(match_token(tok.lexeme, ")")){
+						if(match_token(tok.lexeme, ";")){
+							if(call == "readln"){
+								string label = generateLabel();
+								addLine(label, "call", "getchar", "Remove characters until \\n");
+								addLine("", "cmp", "eax, 0xA", "");
+								addLine("", "jne", label, "If the character isn't \\n, continue removing");
+							}
+							return FOUND;
+						}
+					}
+					error();
+				}
+
+				id = tok.lexeme;
 			}
+
+
 		}
-		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -1487,6 +1528,8 @@ string generateLabel(){
 void printIntro(){
 	addLine("", "global", "main", "");
 	addLine("", "extern", "printf", "");
+	addLine("", "extern", "scanf", "");
+	addLine("", "extern", "getchar", "");
 	addLine("", "section", ".text", "");
 	addLine("main", "", "", "");
 }
@@ -1496,6 +1539,9 @@ void printOutro(){
 	addLine("realFrmt", "db", "\"%f\", 0", "Print real without \\n");
 	addLine("intFrmt", "db", "\"%d\", 0", "Print int without \\n");
 	addLine("stringFrmt", "db", "\"%s\", 0", "Print string without \\n");
+	addLine("realFrmtIn", "db", "\"%lf\", 0", "Read real");
+	addLine("intFrmtIn", "db", "\"%i\", 0", "Read int");
+	addLine("stringFrmtIn", "db", "\"%s\"", "Read string");
 	addLine("NewLine", "db", "0xA, 0", "Print NewLine");
 
 	addLine("negone", "dq", "-1.0", "Negative one");

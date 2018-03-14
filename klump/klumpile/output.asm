@@ -1,35 +1,60 @@
                global    main                
                extern    printf              
+               extern    scanf               
+               extern    getchar             
                section   .text               
 main:                                        
+Label0:                                      	;Start of while loop
+               push      1                   	;Push int literal to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack for comparison
+               pop       eax                 
+               cmp       eax, ebx            
+               je        Label2              	;Push appropriate bool if based on comparison
+               push      0                   	;Push 0 for false comparison
+               jmp       Label3              	;Skip pushing 1
+Label2:                                      	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label3:                                      	;End of comparison
+               pop       eax                 	;Remove bool to test while condition
+               mov       ebx, 1              
+               cmp       eax, ebx            	;See if while condition is true
+               jne       Label1              	;If comparison is false, jump to end
                push      0                   	;Push int literal to stack
                pop       dword [_n_]         	;Pop top of stack to memory location
-               push      dword [Label0 + 4]  	;Push value of real literal to stack in two parts
-               push      dword [Label0]      
-               pop       dword [_x_]         	;Assign expression to real in two parts
-               pop       dword [_x_ + 4]     
+               push      Label4              	;Push address of string literal to stack
+               push      stringFrmt          	;Push format string for printf
+               call      printf              
+               add       esp, 8              
+               push      _x_                 	;Push address to input variable
+               push      realFrmtIn          
+               call      scanf               	;Retrieve input from user
+               add       esp, 8              	;Remove arguments from stack
+Label5:        call      getchar             	;Remove characters until \n
+               cmp       eax, 0xA            
+               jne       Label5              	;If the character isn't \n, continue removing
                push      0                   	;Push int literal to stack
                fild      dword [esp]         	;Load top of stack to floating point stack
                sub       esp, 4              	;Make room on stack for 64-bit float
                fstp      qword [esp]         	;Convert 32-bit int to 64-bit float
                pop       dword [_sum_]       	;Pop top of stack in two parts
                pop       dword [_sum_+ 4]    
-Label1:                                      	;Start of while loop
+Label6:                                      	;Start of while loop
                push      dword [_n_]         	;Push identifier to stack
                push      10                  	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack for comparison
                pop       eax                 
                cmp       eax, ebx            
-               jl        Label3              	;Push appropriate bool if based on comparison
+               jl        Label8              	;Push appropriate bool if based on comparison
                push      0                   	;Push 0 for false comparison
-               jmp       Label4              	;Skip pushing 1
-Label3:                                      	;Label if comparison was true
+               jmp       Label9              	;Skip pushing 1
+Label8:                                      	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
-Label4:                                      	;End of comparison
+Label9:                                      	;End of comparison
                pop       eax                 	;Remove bool to test while condition
                mov       ebx, 1              
                cmp       eax, ebx            	;See if while condition is true
-               jne       Label2              	;If comparison is false, jump to end
+               jne       Label7              	;If comparison is false, jump to end
                push      1                   	;Push int literal to stack
                pop       eax                 	;Pop top of stack to negate
                neg       eax                 
@@ -47,8 +72,8 @@ Label4:                                      	;End of comparison
                idiv      ebx                 	;Divide operands
                push      eax                 	;Push result to stack
                push      dword [_n_]         	;Push identifier to stack
-               push      dword [Label5 + 4]  	;Push value of real literal to stack in two parts
-               push      dword [Label5]      
+               push      dword [Label10 + 4] 	;Push value of real literal to stack in two parts
+               push      dword [Label10]     
                movsd     xmm0, [esp]         	;Switch order of operands on stack
                mov       eax, [esp + 8]      
                movsd     [esp + 4], xmm0     
@@ -76,28 +101,28 @@ Label4:                                      	;End of comparison
                wait                          
                fstsw     ax                  	;Copy fpu flags into cpu flags
                sahf                          
-               je        Label6              	;Push appropriate bool if based on comparison
+               je        Label11             	;Push appropriate bool if based on comparison
                push      0                   	;Push 0 for false comparison
-               jmp       Label7              	;Skip pushing 1
-Label6:                                      	;Label if comparison was true
+               jmp       Label12             	;Skip pushing 1
+Label11:                                     	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
-Label7:                                      	;End of comparison
+Label12:                                     	;End of comparison
                pop       eax                 	;Remove bool from stack
                mov       ebx, 0              
                cmp       eax, ebx            	;Compare bool to 0
-               je        Label8              	;If bool is 0, jump to the else clause
+               je        Label13             	;If bool is 0, jump to the else clause
                push      1                   	;Push int literal to stack
                fild      dword [esp]         	;Load top of stack to floating point stack
                sub       esp, 4              	;Make room on stack for 64-bit float
                fstp      qword [esp]         	;Convert 32-bit int to 64-bit float
                pop       dword [_term_]      	;Pop top of stack in two parts
                pop       dword [_term_+ 4]   
-               jmp       Label9              	;Skip the else clause
-Label8:                                      	;Beginning of else clause
-Label9:                                      	;End of else clause
+               jmp       Label14             	;Skip the else clause
+Label13:                                     	;Beginning of else clause
+Label14:                                     	;End of else clause
                push      0                   	;Push int literal to stack
                pop       dword [_i_]         	;Pop top of stack to memory location
-Label10:                                     	;Start of while loop
+Label15:                                     	;Start of while loop
                push      dword [_i_]         	;Push identifier to stack
                push      2                   	;Push int literal to stack
                push      dword [_n_]         	;Push identifier to stack
@@ -113,16 +138,16 @@ Label10:                                     	;Start of while loop
                pop       ebx                 	;Remove operands from stack for comparison
                pop       eax                 
                cmp       eax, ebx            
-               jl        Label12             	;Push appropriate bool if based on comparison
+               jl        Label17             	;Push appropriate bool if based on comparison
                push      0                   	;Push 0 for false comparison
-               jmp       Label13             	;Skip pushing 1
-Label12:                                     	;Label if comparison was true
+               jmp       Label18             	;Skip pushing 1
+Label17:                                     	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
-Label13:                                     	;End of comparison
+Label18:                                     	;End of comparison
                pop       eax                 	;Remove bool to test while condition
                mov       ebx, 1              
                cmp       eax, ebx            	;See if while condition is true
-               jne       Label11             	;If comparison is false, jump to end
+               jne       Label16             	;If comparison is false, jump to end
                push      dword [_term_+ 4]   	;Push real to stack
                push      dword [_term_]      
                push      dword [_x_+ 4]      	;Push real to stack
@@ -141,8 +166,8 @@ Label13:                                     	;End of comparison
                add       eax, ebx            	;Add operands
                push      eax                 	;Push result to stack
                pop       dword [_i_]         	;Pop top of stack to memory location
-               jmp       Label10             	;Jump back to the top of while loop
-Label11:                                     	;Destination if while condition fails
+               jmp       Label15             	;Jump back to the top of while loop
+Label16:                                     	;Destination if while condition fails
                push      1                   	;Push int literal to stack
                fild      dword [esp]         	;Load top of stack to floating point stack
                sub       esp, 4              	;Make room on stack for 64-bit float
@@ -151,7 +176,7 @@ Label11:                                     	;Destination if while condition fa
                pop       dword [_fact_+ 4]   
                push      1                   	;Push int literal to stack
                pop       dword [_i_]         	;Pop top of stack to memory location
-Label14:                                     	;Start of while loop
+Label19:                                     	;Start of while loop
                push      dword [_i_]         	;Push identifier to stack
                push      2                   	;Push int literal to stack
                push      dword [_n_]         	;Push identifier to stack
@@ -167,16 +192,16 @@ Label14:                                     	;Start of while loop
                pop       ebx                 	;Remove operands from stack for comparison
                pop       eax                 
                cmp       eax, ebx            
-               jle       Label16             	;Push appropriate bool if based on comparison
+               jle       Label21             	;Push appropriate bool if based on comparison
                push      0                   	;Push 0 for false comparison
-               jmp       Label17             	;Skip pushing 1
-Label16:                                     	;Label if comparison was true
+               jmp       Label22             	;Skip pushing 1
+Label21:                                     	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
-Label17:                                     	;End of comparison
+Label22:                                     	;End of comparison
                pop       eax                 	;Remove bool to test while condition
                mov       ebx, 1              
                cmp       eax, ebx            	;See if while condition is true
-               jne       Label15             	;If comparison is false, jump to end
+               jne       Label20             	;If comparison is false, jump to end
                push      dword [_fact_+ 4]   	;Push real to stack
                push      dword [_fact_]      
                push      dword [_i_]         	;Push identifier to stack
@@ -197,8 +222,8 @@ Label17:                                     	;End of comparison
                add       eax, ebx            	;Add operands
                push      eax                 	;Push result to stack
                pop       dword [_i_]         	;Pop top of stack to memory location
-               jmp       Label14             	;Jump back to the top of while loop
-Label15:                                     	;Destination if while condition fails
+               jmp       Label19             	;Jump back to the top of while loop
+Label20:                                     	;Destination if while condition fails
                push      dword [_term_+ 4]   	;Push real to stack
                push      dword [_term_]      
                push      dword [_fact_+ 4]   	;Push real to stack
@@ -228,8 +253,21 @@ Label15:                                     	;Destination if while condition fa
                add       eax, ebx            	;Add operands
                push      eax                 	;Push result to stack
                pop       dword [_n_]         	;Pop top of stack to memory location
-               jmp       Label1              	;Jump back to the top of while loop
-Label2:                                      	;Destination if while condition fails
+               jmp       Label6              	;Jump back to the top of while loop
+Label7:                                      	;Destination if while condition fails
+               push      Label23             	;Push address of string literal to stack
+               push      stringFrmt          	;Push format string for printf
+               call      printf              
+               add       esp, 8              
+               push      dword [_x_+ 4]      	;Push real to stack
+               push      dword [_x_]         
+               push      realFrmt            	;Push format string for printf
+               call      printf              
+               add       esp, 12             
+               push      Label24             	;Push address of string literal to stack
+               push      stringFrmt          	;Push format string for printf
+               call      printf              
+               add       esp, 8              
                push      dword [_sum_+ 4]    	;Push real to stack
                push      dword [_sum_]       
                push      realFrmt            	;Push format string for printf
@@ -238,15 +276,22 @@ Label2:                                      	;Destination if while condition fa
                push      NewLine             	;Push newline to stack for printf
                call      printf              
                add       esp, 4              	;Clean up stack after printf
+               jmp       Label0              	;Jump back to the top of while loop
+Label1:                                      	;Destination if while condition fails
                                              
                section   .data               
 realFrmt:      db        "%f", 0             	;Print real without \n
 intFrmt:       db        "%d", 0             	;Print int without \n
 stringFrmt:    db        "%s", 0             	;Print string without \n
+realFrmtIn:    db        "%lf", 0            	;Read real
+intFrmtIn:     db        "%i", 0             	;Read int
+stringFrmtIn:  db        "%s"                	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
-Label0:        dq        0.523598775         
-Label5:        dq        2.0                 
+Label4:        db        "Please enter a value of x: ", 0
+Label10:       dq        2.0                 
+Label23:       db        "sin(", 0           
+Label24:       db        ") = ", 0           
                                              
                section   .bss                
 _x_:           resb(8)                       
