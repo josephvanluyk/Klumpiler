@@ -28,6 +28,12 @@ struct Literal{
 	string type;
 };
 
+struct GoToLabel{
+	string kName;
+	string aName;
+	bool declared;
+};
+
 /*
 *
 *	END STRUCT DEFINITIONS
@@ -140,6 +146,7 @@ const int FAILED = -1;
 vector<Identifier> identifiers;
 stack<string> typeStack;
 vector<Literal> literals;
+vector<GoToLabel> gotos;
 
 /*
 *
@@ -260,7 +267,7 @@ int _const(){
 		}else if(t.tokenName == "cstring"){
 			Literal l;
 			l.name = generateLabel();
-			l.value = t.lexeme;
+			l.value = t.lexeme + ", 0";
 			l.type = STRING;
 			literals.push_back(l);
 			addLine("", "push", l.name, "Push address of string literal to stack");
@@ -555,6 +562,12 @@ int procedure_list(){
 int procedure(){
 	if(proc_head() == FOUND){
 		if(proc_body() == FOUND){
+			for(int i = 0; i < gotos.size(); i++){
+				if(!gotos.at(i).declared){
+					cerr << "Label: " << gotos.at(i).kName << " undeclared" << endl;
+					error();
+				}
+			}
 			return FOUND;
 		}
 		error();
@@ -604,7 +617,28 @@ int statement(){
 }
 int label(){
 	if(match_token(tok.lexeme, "#")){
+		string label = "#" + tok.lexeme;
 		if(match_token(tok.tokenName, "number")){
+			bool found = false;
+			for(int i = 0; i < gotos.size(); i++){
+				if(gotos.at(i).kName == label){
+					found = true;
+					if(gotos.at(i).declared){
+						cerr << "Duplicate goto" << endl;
+						error();
+					}else{
+						gotos.at(i).declared = true;
+					}
+				}
+			}
+			if(!found){
+				GoToLabel gtl;
+				gtl.kName = label;
+				gtl.aName = "_" + label + "_";
+				gtl.declared = true;
+				gotos.push_back(gtl);
+			}
+			addLine("_" + label + "_", "", "", "");
 			return FOUND;
 		}
 		error();
@@ -706,7 +740,7 @@ int write_statement(){
 					addLine("", "call", "printf", "");
 					addLine("", "add", "esp, 12", "");
 				}else{
-					if(typeStack.top() == INT){
+					if(typeStack.top() == INT || typeStack.top() == BOOL){
 						addLine("", "push", "intFrmt", "Push format string for printf");
 					}else if(typeStack.top() == STRING){
 						addLine("", "push", "stringFrmt", "Push format string for printf");
@@ -761,15 +795,14 @@ int assign_statement(){
 				if(expression() == FOUND){						//Find an expression and push it to the stack
 					if(id.type == REAL){
 						if(typeStack.top() == REAL){
-							addLine("", "pop", "[" + id.aName + "]", "Assign expression to real in two parts");
-							addLine("", "pop", "[" + id.aName + " + 4]", "");
-							typeStack.pop();
+							addLine("", "pop", "dword [" + id.aName + "]", "Assign expression to real in two parts");
+							addLine("", "pop", "dword [" + id.aName + " + 4]", "");
 						}else if(typeStack.top() == INT){
 							addLine("", "fild", "dword [esp]", "Load top of stack to floating point stack");
-							addLine("", "add", "esp, 4", "Make room on stack for 64-bit float");
+							addLine("", "sub", "esp, 4", "Make room on stack for 64-bit float");
 							addLine("", "fstp", "qword [esp]", "Convert 32-bit int to 64-bit float");
-							addLine("", "pop", "dword [" + id.aName + " + 4]", "Pop top of stack in two parts");
-							addLine("", "pop", "dword [" + id.aName + "]", "");
+							addLine("", "pop", "dword [" + id.aName + "]", "Pop top of stack in two parts");
+							addLine("", "pop", "dword [" + id.aName + "+ 4]", "");
 						}
 					}else if(id.type == INT){
 						if(typeStack.top() == REAL){
@@ -781,9 +814,9 @@ int assign_statement(){
 					}else if(id.type == STRING){
 						addLine("", "pop", "dword [" + id.aName + "]", "Pop memory location of string to string variable");
 					}
+
+
 					typeStack.pop();
-
-
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
@@ -827,9 +860,26 @@ int return_statement(){
 
 int goto_statement(){
 	if(match_token(tok.lexeme, "goto")){
-		if(label() == FOUND){
-			if(match_token(tok.lexeme, ";")){
-				return FOUND;
+		if(match_token(tok.lexeme, "#")){
+			string label = "#" + tok.lexeme;
+			if(match_token(tok.tokenName, "number")){
+				bool found = false;
+				for(int i = 0; i < gotos.size(); i++){
+					if(gotos.at(i).kName == label){
+						found = true;
+					}
+				}
+				if(!found){
+					GoToLabel gtl;
+					gtl.kName = label;
+					gtl.aName = "_" + gtl.kName + "_";
+					gtl.declared = false;
+					gotos.push_back(gtl);
+				}
+				addLine("", "jmp", "_" + label + "_", "");
+				if(match_token(tok.lexeme, ";")){
+					return FOUND;
+				}
 			}
 		}
 		error();
@@ -867,11 +917,26 @@ int if_statement(){
 			if(comparison() == FOUND){
 				if(match_token(tok.lexeme, ")")){
 					if(match_token(tok.lexeme, "then")){
+						if(typeStack.top() != BOOL){
+							cerr << "Non-boolean expression found: " << typeStack.top() << endl;
+							error();
+						}
+						typeStack.pop();
+						addLine("", "pop", "eax", "Remove bool from stack");
+						string iffalse = generateLabel();
+						string end = generateLabel();
+						addLine("", "mov", "ebx, 0", "");
+						addLine("", "cmp", "eax, ebx", "Compare bool to 0");
+						addLine("", "je", iffalse, "If bool is 0, jump to the else clause");
 						if(statement() == FOUND){
+							addLine("", "jmp", end, "Skip the else clause");
+							addLine(iffalse, "", "", "Beginning of else clause");
 							if(else_clause() == FOUND){
+								addLine(end, "", "", "End of else clause");
 								return FOUND;
 							}
 						}
+
 					}
 				}
 			}
@@ -894,9 +959,23 @@ int else_clause(){
 int while_statement(){
 	if(match_token(tok.lexeme, "while")){
 		if(match_token(tok.lexeme, "(")){
+			string headOfWhileLoop = generateLabel();
+			string endOfWhileLoop = generateLabel();
+			addLine(headOfWhileLoop, "", "", "Start of while loop");
 			if(comparison() == FOUND){
+				if(typeStack.top() != BOOL){
+					cerr << "Non-boolean expression found: " << typeStack.top() << endl;
+					error();
+				}
+				typeStack.pop();
+				addLine("", "pop", "eax", "Remove bool to test while condition");
+				addLine("", "mov", "ebx, 1", "");
+				addLine("", "cmp", "eax, ebx", "See if while condition is true");
+				addLine("", "jne", endOfWhileLoop, "If comparison is false, jump to end");
 				if(match_token(tok.lexeme, ")")){
 					if(compound_statement() == FOUND){
+						addLine("", "jmp", headOfWhileLoop, "Jump back to the top of while loop");
+						addLine(endOfWhileLoop, "", "", "Destination if while condition fails");
 						return FOUND;
 					}
 				}
@@ -1004,15 +1083,74 @@ int expression(){
 
 int comparison(){
 	if(simple_expression() == FOUND){
+		string comparison = tok.lexeme;
 		while(compop() == FOUND){
 			if(simple_expression() == FOUND){
+					string typeTwo = typeStack.top();
+					typeStack.pop();
+					string typeOne = typeStack.top();
+					typeStack.pop();
 
+					if(typeOne == INT && typeTwo == INT){
+						addLine("", "pop", "ebx", "Remove operands from stack for comparison");
+						addLine("", "pop", "eax", "");
+						addLine("", "cmp", "eax, ebx", "");
+					}else if ((typeOne == INT || typeOne == REAL) && (typeTwo == INT || typeTwo == REAL)){
+						if(typeOne == INT){
+							addLine("", "sub", "esp, 4", "Make room on stack to convert int to real");
+							addLine("", "mov", "eax, [esp + 4]", "Move real to new stack location in two parts");
+							addLine("", "mov", "[esp], eax", "");
+							addLine("", "mov", "eax, [esp + 8]", "Move to eax first because mov doesn't accept two memory locations");
+							addLine("", "mov", "[esp + 4], eax", "");
+							addLine("", "fild", "dword [esp + 12]", "Load int to floating point stack for conversion");
+							addLine("", "fstp", "qword [esp + 8]", "Put new float back on stack");
+						}else if(typeTwo == INT){
+							addLine("", "sub", "esp, 4", "Make room on stack to convert int to real");
+							addLine("", "fild", "[esp + 4]", "Load int to floating point stack");
+							addLine("", "fstp", "qword [esp]", "Put new float back on stack");
+						}
+						addLine("", "fld", "qword [esp + 8]", "Put operands on stack for comparison");
+						addLine("", "fld", "qword [esp]", "");
+						addLine("", "add", "esp, 16", "Remove extra space on stack");
+						addLine("", "fcompp", "", "Complete comparison");
+						addLine("", "wait", "", "");
+						addLine("", "fstsw", "ax", "Copy fpu flags into cpu flags");
+						addLine("", "sahf", "", "");
+					}else{
+						cerr << "Unsupported operand for " << comparison << endl;
+						error();
+					}
+					string iftrue = generateLabel();
+					string end = generateLabel();
+					string opCode;
+					if(comparison == "="){
+						opCode = "je";
+					}else if(comparison == "<>"){
+						opCode = "jne";
+					}else if(comparison == ">"){
+						opCode = "jg";
+					}else if(comparison == ">="){
+						opCode = "jge";
+					}else if(comparison == "<"){
+						opCode = "jl";
+					}else if(comparison == "<="){
+						opCode = "jle";
+					}
+					addLine("", opCode, iftrue, "Push appropriate bool if based on comparison");
+					addLine("", "push", "0", "Push 0 for false comparison");
+					addLine("", "jmp", end, "Skip pushing 1");
+					addLine(iftrue, "", "", "Label if comparison was true");
+					addLine("", "push", "1", "Push 1 for true comparison");
+					addLine(end, "", "", "End of comparison");
+					typeStack.push(BOOL);
 			}else{
 				error();
 			}
 		}
 		return FOUND;
 	}
+
+
 	return DOES_NOT_MATCH;
 
 }
@@ -1054,7 +1192,9 @@ int simple_expression(){
 						}
 						addLine("", "push", "eax", "Push result to stack");
 					}else{
+						bool swapped = false;
 						if(typeOne == INT && typeTwo == REAL){
+							swapped = true;
 							swapTopOfStack();
 							typeOne = REAL;
 							typeTwo = INT;
@@ -1071,7 +1211,12 @@ int simple_expression(){
 							addLine("", "addsd", "xmm0, xmm1", "Add operands");
 							typeStack.push(REAL);
 						}else if(op == "-"){
-							addLine("", "subsd", "xmm0, xmm1", "Subtract operands");
+							if(swapped){
+								addLine("", "subsd", "xmm1, xmm0", "Subtract operands in reverse order because they were swapped");
+								addLine("", "movsd", "xmm0, xmm1", "Move result to xmm0");
+							}else{
+								addLine("", "subsd", "xmm0, xmm1", "Subtract operands");
+							}
 							typeStack.push(REAL);
 						}
 
@@ -1119,7 +1264,9 @@ int term(){
 
 					addLine("", "push", "eax", "Push result to stack");
 				}else{
+					bool swapped = false;
 					if(typeOne == INT && typeTwo == REAL){
+						swapped = true;
 						swapTopOfStack();
 						typeTwo = INT;
 						typeOne = REAL;
@@ -1128,14 +1275,19 @@ int term(){
 						convertTopOfStackToFloat();
 					}
 
-					addLine("", "movsd", "[esp], xmm1", "Remove operands from stack to mulop");
-					addLine("", "movsd", "[esp + 8], xmm0", "");
+					addLine("", "movsd", "xmm1, [esp]", "Remove operands from stack to mulop");
+					addLine("", "movsd", "xmm0, [esp + 8]", "");
 					addLine("", "add", "esp, 8", "Remove extra space from stack");
 					if(op == "*"){
 						addLine("", "mulsd", "xmm0, xmm1", "Multiply floating point operands");
 						typeStack.push(REAL);
 					}else if(op == "/"){
-						addLine("", "divsd", "xmm0, xmm1", "Divide floating point operands");
+						if(swapped){
+							addLine("", "divsd", "xmm1, xmm0", "Divide in reverse order");
+							addLine("", "movsd", "xmm0, xmm1", "Move result to xmm0");
+						}else{
+							addLine("", "divsd", "xmm0, xmm1", "Divide floating point operands");
+						}
 						typeStack.push(REAL);
 					}
 					addLine("", "movsd", "[esp], xmm0", "Push result to stack");
@@ -1384,7 +1536,7 @@ void swapTopOfStack(){
 	addLine("", "movsd", "xmm0, [esp]", "Switch order of operands on stack");
 	addLine("", "mov", "eax, [esp + 8]", "");
 	addLine("", "movsd", "[esp + 4], xmm0", "");
-	addLine("", "mov", "eax, [esp]", "Finish pushing in reverse order");
+	addLine("", "mov", "[esp], eax", "Finish pushing in reverse order");
 }
 
 void convertTopOfStackToFloat(){
