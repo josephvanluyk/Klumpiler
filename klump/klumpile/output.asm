@@ -4,6 +4,9 @@
                extern    getchar             
                section   .text               
 main:                                        
+               push      ebp                 	;Store base pointer
+               mov       ebp, esp            	;Create new base pointer
+               sub       esp, 20             
 Label0:                                      	;Start of while loop
                push      1                   	;Push int literal to stack
                push      1                   	;Push int literal to stack
@@ -40,8 +43,8 @@ Label5:        call      getchar             	;Remove characters until \n
                pop       dword [_sum_]       	;Pop top of stack in two parts
                pop       dword [_sum_+ 4]    
 Label6:                                      	;Start of while loop
-               push      dword [_n_]         	;Push identifier to stack
-               push      10                  	;Push int literal to stack
+               push      dword [_n_]         	;Push global var to stack
+               push      30                  	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack for comparison
                pop       eax                 
                cmp       eax, ebx            
@@ -64,14 +67,14 @@ Label9:                                      	;End of comparison
                fstp      qword [esp]         	;Convert 32-bit int to 64-bit float
                pop       dword [_term_]      	;Pop top of stack in two parts
                pop       dword [_term_+ 4]   
-               push      dword [_n_]         	;Push identifier to stack
+               push      dword [_n_]         	;Push global var to stack
                push      2                   	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack to mulop
                pop       eax                 
                cdq                           	;Sign extend eax
                idiv      ebx                 	;Divide operands
                push      eax                 	;Push result to stack
-               push      dword [_n_]         	;Push identifier to stack
+               push      dword [_n_]         	;Push global var to stack
                push      dword [Label10 + 4] 	;Push value of real literal to stack in two parts
                push      dword [Label10]     
                movsd     xmm0, [esp]         	;Switch order of operands on stack
@@ -121,11 +124,12 @@ Label12:                                     	;End of comparison
 Label13:                                     	;Beginning of else clause
 Label14:                                     	;End of else clause
                push      0                   	;Push int literal to stack
-               pop       dword [_i_]         	;Pop top of stack to memory location
+               lea       esi, [ebp - 4]      	;Load address of local int
+               pop       dword [esi]         
 Label15:                                     	;Start of while loop
-               push      dword [_i_]         	;Push identifier to stack
+               push      dword [ebp - 4]     	;Push local var to stack
                push      2                   	;Push int literal to stack
-               push      dword [_n_]         	;Push identifier to stack
+               push      dword [_n_]         	;Push global var to stack
                pop       ebx                 	;Remove operands from stack to mulop
                pop       eax                 
                imul      eax, ebx            
@@ -148,38 +152,42 @@ Label18:                                     	;End of comparison
                mov       ebx, 1              
                cmp       eax, ebx            	;See if while condition is true
                jne       Label16             	;If comparison is false, jump to end
-               push      dword [_term_+ 4]   	;Push real to stack
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
                push      dword [_term_]      
-               push      dword [_x_+ 4]      	;Push real to stack
+               push      dword [_x_ + 4]     	;Push global real to stack in two parts
                push      dword [_x_]         
                movsd     xmm1, [esp]         	;Remove operands from stack to mulop
                movsd     xmm0, [esp + 8]     
                add       esp, 8              	;Remove extra space from stack
                mulsd     xmm0, xmm1          	;Multiply floating point operands
                movsd     [esp], xmm0         	;Push result to stack
-               pop       dword [_term_]      	;Assign expression to real in two parts
-               pop       dword [_term_ + 4]  
-               push      dword [_i_]         	;Push identifier to stack
+               pop       dword [_term_]      	;Pop top of stack in two parts
+               pop       dword [_term_+ 4]   
+               push      dword [ebp - 4]     	;Push local var to stack
                push      1                   	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack to addop
                pop       eax                 
                add       eax, ebx            	;Add operands
                push      eax                 	;Push result to stack
-               pop       dword [_i_]         	;Pop top of stack to memory location
+               lea       esi, [ebp - 4]      	;Load address of local int
+               pop       dword [esi]         
                jmp       Label15             	;Jump back to the top of while loop
 Label16:                                     	;Destination if while condition fails
                push      1                   	;Push int literal to stack
                fild      dword [esp]         	;Load top of stack to floating point stack
                sub       esp, 4              	;Make room on stack for 64-bit float
                fstp      qword [esp]         	;Convert 32-bit int to 64-bit float
-               pop       dword [_fact_]      	;Pop top of stack in two parts
-               pop       dword [_fact_+ 4]   
+               lea       esi, [ebp - 12]     	;Load address of local real
+               pop       dword [esi]         	;Store first half of real
+               lea       esi, [ebp - 8]      
+               pop       dword [esi]         
                push      1                   	;Push int literal to stack
-               pop       dword [_i_]         	;Pop top of stack to memory location
+               lea       esi, [ebp - 4]      	;Load address of local int
+               pop       dword [esi]         
 Label19:                                     	;Start of while loop
-               push      dword [_i_]         	;Push identifier to stack
+               push      dword [ebp - 4]     	;Push local var to stack
                push      2                   	;Push int literal to stack
-               push      dword [_n_]         	;Push identifier to stack
+               push      dword [_n_]         	;Push global var to stack
                pop       ebx                 	;Remove operands from stack to mulop
                pop       eax                 
                imul      eax, ebx            
@@ -202,9 +210,9 @@ Label22:                                     	;End of comparison
                mov       ebx, 1              
                cmp       eax, ebx            	;See if while condition is true
                jne       Label20             	;If comparison is false, jump to end
-               push      dword [_fact_+ 4]   	;Push real to stack
-               push      dword [_fact_]      
-               push      dword [_i_]         	;Push identifier to stack
+               push      dword [ebp - 8]     	;Push local real to stack in two parts
+               push      dword [ebp - 12]    
+               push      dword [ebp - 4]     	;Push local var to stack
                fild      dword [esp]         	;Convert int on stack to float
                sub       esp, 4              	;Make room on stack for float
                fstp      qword [esp]         	;Put new float on stack
@@ -213,40 +221,43 @@ Label22:                                     	;End of comparison
                add       esp, 8              	;Remove extra space from stack
                mulsd     xmm0, xmm1          	;Multiply floating point operands
                movsd     [esp], xmm0         	;Push result to stack
-               pop       dword [_fact_]      	;Assign expression to real in two parts
-               pop       dword [_fact_ + 4]  
-               push      dword [_i_]         	;Push identifier to stack
+               lea       esi, [ebp - 12]     	;Load address of local real
+               pop       dword [esi]         	;Store first half of real
+               lea       esi, [ebp - 8]      
+               pop       dword [esi]         
+               push      dword [ebp - 4]     	;Push local var to stack
                push      1                   	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack to addop
                pop       eax                 
                add       eax, ebx            	;Add operands
                push      eax                 	;Push result to stack
-               pop       dword [_i_]         	;Pop top of stack to memory location
+               lea       esi, [ebp - 4]      	;Load address of local int
+               pop       dword [esi]         
                jmp       Label19             	;Jump back to the top of while loop
 Label20:                                     	;Destination if while condition fails
-               push      dword [_term_+ 4]   	;Push real to stack
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
                push      dword [_term_]      
-               push      dword [_fact_+ 4]   	;Push real to stack
-               push      dword [_fact_]      
+               push      dword [ebp - 8]     	;Push local real to stack in two parts
+               push      dword [ebp - 12]    
                movsd     xmm1, [esp]         	;Remove operands from stack to mulop
                movsd     xmm0, [esp + 8]     
                add       esp, 8              	;Remove extra space from stack
                divsd     xmm0, xmm1          	;Divide floating point operands
                movsd     [esp], xmm0         	;Push result to stack
-               pop       dword [_term_]      	;Assign expression to real in two parts
-               pop       dword [_term_ + 4]  
-               push      dword [_sum_+ 4]    	;Push real to stack
+               pop       dword [_term_]      	;Pop top of stack in two parts
+               pop       dword [_term_+ 4]   
+               push      dword [_sum_ + 4]   	;Push global real to stack in two parts
                push      dword [_sum_]       
-               push      dword [_term_+ 4]   	;Push real to stack
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
                push      dword [_term_]      
                movsd     xmm1, [esp]         	;Put top of stack into floating point registers
                movsd     xmm0, [esp + 8]     
                add       esp, 8              	;Remove extra space from stack
                addsd     xmm0, xmm1          	;Add operands
                movsd     [esp], xmm0         	;Push result to top of stack
-               pop       dword [_sum_]       	;Assign expression to real in two parts
-               pop       dword [_sum_ + 4]   
-               push      dword [_n_]         	;Push identifier to stack
+               pop       dword [_sum_]       	;Pop top of stack in two parts
+               pop       dword [_sum_+ 4]    
+               push      dword [_n_]         	;Push global var to stack
                push      1                   	;Push int literal to stack
                pop       ebx                 	;Remove operands from stack to addop
                pop       eax                 
@@ -259,7 +270,7 @@ Label7:                                      	;Destination if while condition fa
                push      stringFrmt          	;Push format string for printf
                call      printf              
                add       esp, 8              
-               push      dword [_x_+ 4]      	;Push real to stack
+               push      dword [_x_ + 4]     	;Push global real to stack in two parts
                push      dword [_x_]         
                push      realFrmt            	;Push format string for printf
                call      printf              
@@ -268,7 +279,7 @@ Label7:                                      	;Destination if while condition fa
                push      stringFrmt          	;Push format string for printf
                call      printf              
                add       esp, 8              
-               push      dword [_sum_+ 4]    	;Push real to stack
+               push      dword [_sum_ + 4]   	;Push global real to stack in two parts
                push      dword [_sum_]       
                push      realFrmt            	;Push format string for printf
                call      printf              
@@ -285,7 +296,7 @@ intFrmt:       db        "%d", 0             	;Print int without \n
 stringFrmt:    db        "%s", 0             	;Print string without \n
 realFrmtIn:    db        "%lf", 0            	;Read real
 intFrmtIn:     db        "%i", 0             	;Read int
-stringFrmtIn:  db        "%s"                	;Read string
+stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
 Label4:        db        "Please enter a value of x: ", 0
@@ -298,5 +309,6 @@ _x_:           resb(8)
 _sum_:         resb(8)                       
 _n_:           resb(4)                       
 _term_:        resb(8)                       
-_i_:           resb(4)                       
-_fact_:        resb(8)                       
+               resb(4)                       
+               resb(8)                       
+               resb(8)                       

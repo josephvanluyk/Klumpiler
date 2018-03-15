@@ -1,24 +1,30 @@
 global
 const
 type
-proc
-procedure main;
 dcl
 	x : real;
 	sum : real;
 	n : int;
 	term : real;
+
+proc
+procedure main;
+dcl
+
 	i : int;
 	fact : real;
+	test : real;
 
 begin
+
 	while(1 = 1)
 		do;
 			n := 0;
+
 			write("Please enter a value of x: ");
 			readln(x);
 			sum := 0;
-			while(n < 10)
+			while(n < 30)
 				do;
 					term := -1;
 					if((n / 2) = (n / 2.0)) then

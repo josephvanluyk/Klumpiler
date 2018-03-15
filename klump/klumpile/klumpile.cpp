@@ -16,10 +16,12 @@ token tok(0, "", "");
 *
 */
 
-struct Identifier{
+struct Variable{
 	string kName;
 	string aName;
 	string type;
+	int scope;
+	int offset;
 };
 
 struct Literal{
@@ -57,8 +59,8 @@ int struct_type();
 int array_type();
 int record_type();
 int fld_list();
-int dcl_definitions();
-int dcl_list();
+int dcl_definitions(int scope);
+int dcl_list(int scope);
 int dcl_type();
 int atomic_type();
 int proc_declarations();
@@ -111,14 +113,16 @@ int qualifier();
 bool match_token(string a, string b);
 void error();
 void addLine(string label, string opcode, string operands, string comment);
-Identifier findIdentifier(string id);
 string generateLabel();
 void printIntro();
 void printOutro();
 void swapTopOfStack();
 void convertTopOfStackToFloat();
 void printNewLine();
-
+Variable getVariable(string kName);
+void addAssign(string typeTwo, Variable var);
+string appendString(string str, int n);
+string getOffsetString(int offset);
 /*
 *
 *	END FUNCTION DECLARATIONS
@@ -140,10 +144,19 @@ string const REAL = "real";
 string const INT = "int";
 string const BOOL = "bool";
 string const STRING = "string";
+int const LOCAL = 0;
+int const GLOBAL = 1;
+int const CONST = 2;
 const int FOUND = 1;
 const int DOES_NOT_MATCH = 0;
 const int FAILED = -1;
-vector<Identifier> identifiers;
+int storage = 0;
+//vector<Identifier> globalIdentifiers;
+
+vector<Variable> globalVars;
+vector<Variable> localVars;
+vector<Variable> constants;
+
 stack<string> typeStack;
 vector<Literal> literals;
 vector<GoToLabel> gotos;
@@ -197,7 +210,7 @@ int klump_program(){
 //<global_definitions> -> GLOBAL <const_definitions> <type_definitons> <dcl_definitions> <proc_declarations> | ""
 int global_definitions(){
 	if(match_token(tok.lexeme, "global")){
-		if(const_definitions() == FOUND && type_definitions() == FOUND && dcl_definitions() == FOUND && proc_declarations() == FOUND){
+		if(const_definitions() == FOUND && type_definitions() == FOUND && dcl_definitions(GLOBAL) == FOUND && proc_declarations() == FOUND){
 			return FOUND;
 		}
 		error();
@@ -224,7 +237,8 @@ int const_list(){
 	while(match_token(tok.tokenName, "Identifier")){
 		if(match_token(tok.lexeme, ":")){
 			if(_const() == FOUND){
-				Identifier id;
+				Variable id;
+				id.scope = CONST;
 				id.kName = t.lexeme;
 				id.aName = "_" + t.lexeme + "_";
 				if(typeStack.top() == INT){
@@ -239,7 +253,7 @@ int const_list(){
 					addLine("", "pop", "dword [" + id.aName + " + 4]", "");
 				}
 				typeStack.pop();
-				identifiers.push_back(id);
+				constants.push_back(id);
 				if(match_token(tok.lexeme, ";")){
 					t = tok;
 					pass = true;
@@ -360,9 +374,9 @@ int fld_list(){
 	return FOUND;
 }
 
-int dcl_definitions(){
+int dcl_definitions(int scope){
 	if(match_token(tok.lexeme, "dcl")){
-		if(dcl_list() == FOUND){
+		if(dcl_list(scope) == FOUND){
 			return FOUND;
 		}else{
 			error();
@@ -372,7 +386,7 @@ int dcl_definitions(){
 }
 
 
-int dcl_list(){
+int dcl_list(int scope){
 	bool pass = false;
 	token t1 = tok;
 	while(match_token(tok.tokenName, "Identifier")){
@@ -382,19 +396,29 @@ int dcl_list(){
 			//bool, int, real, string, or identifier
 			token  t2 = tok;
 			if(dcl_type() == FOUND){
-				Identifier id;
+				Variable id;
 				id.kName = t1.lexeme;
-				id.aName = "_" + id.kName + "_";
+				if(scope == GLOBAL){
+					id.scope = GLOBAL;
+					id.aName = "_" + id.kName + "_";
+				}else if(scope == LOCAL){
+					id.scope = LOCAL;
+				}
 				if(t2.lexeme == "bool"){
 					id.type = BOOL;
+					id.offset = storage + 4;
 				}else if(t2.lexeme == "real"){
 					id.type = REAL;
+					id.offset = storage + 8;
 				}else if(t2.lexeme == "int"){
 					id.type = INT;
+					id.offset = storage + 4;
 				}else{
 					id.type = t2.lexeme;
 				}
-				identifiers.push_back(id);
+				storage = id.offset;
+
+				globalVars.push_back(id);
 				if(match_token(tok.lexeme, ";")){
 					pass = true;
 				}
@@ -560,6 +584,7 @@ int procedure_list(){
 }
 
 int procedure(){
+	storage = 0;
 	if(proc_head() == FOUND){
 		if(proc_body() == FOUND){
 			for(int i = 0; i < gotos.size(); i++){
@@ -588,7 +613,10 @@ int proc_head(){
 }
 
 int proc_body(){
-	if(dcl_definitions() == FOUND){
+	if(dcl_definitions(LOCAL) == FOUND){
+		addLine("", "push", "ebp", "Store base pointer");
+		addLine("", "mov", "ebp, esp", "Create new base pointer");
+		addLine("", "sub", appendString("esp, ", storage),  "");
 		if(match_token(tok.lexeme, "begin")){
 			if(statement_list() == FOUND){
 				if(match_token(tok.lexeme, "end")){
@@ -724,9 +752,9 @@ int read_statement(){
 		if(match_token(tok.lexeme, "(")){
 			string id = tok.lexeme;
 			while(match_token(tok.tokenName, "Identifier")){
-				Identifier idToWrite;
-				for(int i = 0; i < identifiers.size(); i++){
-					Identifier potential = identifiers.at(i);
+				Variable idToWrite;
+				for(int i = 0; i < globalVars.size(); i++){
+					Variable potential = globalVars.at(i);
 					if(potential.kName == id){
 						idToWrite = potential;
 					}
@@ -815,49 +843,14 @@ int assign_statement(){
 	token t = tok;
 	if(match_token(tok.tokenName, "Identifier")){
 		/* Have we seen this identifier declared? */
-		bool found = false;
-		Identifier id;
-		for(int i = 0; i < identifiers.size(); i++){
-			if(identifiers.at(i).kName == t.lexeme){
-				found = true;
-				id = identifiers.at(i);
-
-			}
-		}
-		if(!found){
-			cerr << "Unknown Identifier" << endl;
-			error();
-		}
-
-		/* It has been found */
+		Variable id  = getVariable(t.lexeme);
 
 		if(qualifier() == FOUND){								//Are we dealing with an Array/Record?
 			if(match_token(tok.lexeme, ":=")){
 				if(expression() == FOUND){						//Find an expression and push it to the stack
-					if(id.type == REAL){
-						if(typeStack.top() == REAL){
-							addLine("", "pop", "dword [" + id.aName + "]", "Assign expression to real in two parts");
-							addLine("", "pop", "dword [" + id.aName + " + 4]", "");
-						}else if(typeStack.top() == INT){
-							addLine("", "fild", "dword [esp]", "Load top of stack to floating point stack");
-							addLine("", "sub", "esp, 4", "Make room on stack for 64-bit float");
-							addLine("", "fstp", "qword [esp]", "Convert 32-bit int to 64-bit float");
-							addLine("", "pop", "dword [" + id.aName + "]", "Pop top of stack in two parts");
-							addLine("", "pop", "dword [" + id.aName + "+ 4]", "");
-						}
-					}else if(id.type == INT){
-						if(typeStack.top() == REAL){
-							cerr << "Cannot convert float to int" << endl;
-							error();
-						}else if(typeStack.top() == INT){
-							addLine("", "pop", "dword [" + id.aName + "]", "Pop top of stack to memory location");
-						}
-					}else if(id.type == STRING){
-						addLine("", "pop", "dword [" + id.aName + "]", "Pop memory location of string to string variable");
-					}
-
-
+					string typeTwo = typeStack.top();
 					typeStack.pop();
+					addAssign(typeTwo, id);
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
@@ -1375,19 +1368,22 @@ int factor(){
 			return FOUND;
 		}else if(qualifier() == FOUND){
 			if(next != "." && next != "["){
-				Identifier found;
-				for(int i = 0; i < identifiers.size(); i++){
-					found = identifiers.at(i);
-					if(found.kName == id){
-						typeStack.push(found.type);
-						if(found.type == REAL){
-							addLine("","push", "dword [" + found.aName + "+ 4]", "Push real to stack");
-							addLine("", "push", "dword [" + found.aName + "]", "");
-						}else{
-							addLine("", "push", "dword [" + found.aName + "]", "Push identifier to stack");
-						}
+				Variable found = getVariable(id);
+				typeStack.push(found.type);
+				if(found.type == REAL){
+					if(found.scope == GLOBAL || found.scope == CONST){
+						addLine("", "push", "dword [" + found.aName + " + 4]", "Push global real to stack in two parts");
+						addLine("", "push", "dword [" + found.aName + "]", "");
+					}else{
+						addLine("", "push", "dword " + getOffsetString(found.offset - 4), "Push local real to stack in two parts");
+						addLine("", "push", "dword " + getOffsetString(found.offset), "");
 					}
-
+				}else{
+					if(found.scope == GLOBAL || found.scope == CONST){
+						addLine("", "push", "dword [" + found.aName + "]", "Push global var to stack");
+					}else{
+						addLine("", "push", "dword " + getOffsetString(found.offset), "Push local var to stack");
+					}
 				}
 			}
 			return FOUND;
@@ -1500,20 +1496,6 @@ void addLine(string label, string opcode, string operands, string comment){
 
 
 
-Identifier findIdentifier(string id){
-	for(int i = 0; i < identifiers.size(); i++){
-		if(identifiers.at(i).kName == id){
-			return identifiers.at(i);
-		}
-	}
-
-	cout << "Undeclared Identifier: " << id << endl;
-	error();
-
-	return identifiers.at(0);
-}
-
-
 string generateLabel(){
 	static int k = 0;
 	stringstream ss;
@@ -1524,7 +1506,17 @@ string generateLabel(){
 	return out;
 }
 
+string appendString(string str, int n){
+	stringstream ss;
+	ss << str << n;
+	return ss.str();
+}
 
+string getOffsetString(int offset){
+	stringstream ss;
+	ss << "[ebp - " << offset << "]";
+	return ss.str();
+}
 void printIntro(){
 	addLine("", "global", "main", "");
 	addLine("", "extern", "printf", "");
@@ -1541,7 +1533,7 @@ void printOutro(){
 	addLine("stringFrmt", "db", "\"%s\", 0", "Print string without \\n");
 	addLine("realFrmtIn", "db", "\"%lf\", 0", "Read real");
 	addLine("intFrmtIn", "db", "\"%i\", 0", "Read int");
-	addLine("stringFrmtIn", "db", "\"%s\"", "Read string");
+	addLine("stringFrmtIn", "db", "\"%s\", 0", "Read string");
 	addLine("NewLine", "db", "0xA, 0", "Print NewLine");
 
 	addLine("negone", "dq", "-1.0", "Negative one");
@@ -1563,8 +1555,8 @@ void printOutro(){
 	}
 	addLine("", "", "", "");
 	addLine("", "section", ".bss", "");
-	for(int i = 0; i < identifiers.size(); i++){
-		Identifier id = identifiers.at(i);
+	for(int i = 0; i < globalVars.size(); i++){
+		Variable id = globalVars.at(i);
 		string size;
 		if(id.type == REAL){
 			size = "8";
@@ -1596,4 +1588,63 @@ void printNewLine(){
 	addLine("", "call", "printf", "");
 	addLine("", "add", "esp, 4", "Clean up stack after printf");
 
+}
+
+void addAssign(string typeTwo, Variable var){
+	if(var.type == REAL){
+		if(typeTwo == INT){
+			addLine("", "fild", "dword [esp]", "Load top of stack to floating point stack");
+			addLine("", "sub", "esp, 4", "Make room on stack for 64-bit float");
+			addLine("", "fstp", "qword [esp]", "Convert 32-bit int to 64-bit float");
+		}
+		if(var.scope == GLOBAL){
+			addLine("", "pop", "dword [" + var.aName + "]", "Pop top of stack in two parts");
+			addLine("", "pop", "dword [" + var.aName + "+ 4]", "");
+		}else if(var.scope == LOCAL){
+			addLine("", "lea", "esi, " + getOffsetString(var.offset), "Load address of local real");
+			addLine("", "pop", "dword [esi]", "Store first half of real");
+			addLine("", "lea", "esi, " + getOffsetString(var.offset - 4), "");
+			addLine("", "pop", "dword [esi]", "");
+		}
+	}else if(var.type == INT){
+		if(typeTwo == REAL){
+			cerr << "Cannot convert float to int" << endl;
+			error();
+		}else if(typeTwo == INT){
+			if(var.scope == GLOBAL){
+				addLine("", "pop", "dword [" + var.aName + "]", "Pop top of stack to memory location");
+			}else if(var.scope == LOCAL){
+				addLine("", "lea", "esi, " + getOffsetString(var.offset), "Load address of local int");
+				addLine("", "pop", "dword [esi]", "");
+			}
+		}
+	}else if(var.type == STRING){
+		addLine("", "pop", "dword [" + var.aName + "]", "Pop memory location of string to string variable");
+	}
+}
+
+
+Variable getVariable(string kName){
+	Variable found;
+	for(int i = 0; i < localVars.size(); i++){
+		if(localVars.at(i).kName == kName){
+			return localVars.at(i);
+		}
+	}
+
+	for(int i = 0; i < globalVars.size(); i++){
+		if(globalVars.at(i).kName == kName){
+			return globalVars.at(i);
+		}
+	}
+
+	for(int i = 0; i < constants.size(); i++){
+		if(constants.at(i).kName == kName){
+			return constants.at(i);
+		}
+	}
+	cerr << "Unknown identifier " << kName << endl;
+	error();
+	Variable v;
+	return v;
 }

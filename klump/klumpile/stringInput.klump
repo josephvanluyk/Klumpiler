@@ -1,0 +1,14 @@
+global
+const
+type
+proc
+procedure main;
+dcl
+	str : string;
+
+begin
+	write("Please enter a string: ");
+	readln(str);
+	write("The string you entered was: ");
+	writeln(str);
+end.
