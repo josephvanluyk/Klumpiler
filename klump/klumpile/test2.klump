@@ -3,11 +3,13 @@ const
 type
 dcl
 proc
+test(x : int, y : real) : real;
+test2(myvar : real, m : int) : string;
 procedure main;
 dcl
 	i : int;
 begin
 	readln(i);
-	writeln(i);	
+	writeln(i);
 
 end.

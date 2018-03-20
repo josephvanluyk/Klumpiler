@@ -36,6 +36,17 @@ struct GoToLabel{
 	bool declared;
 };
 
+struct Argument{
+	string type;
+	string name;
+};
+
+struct Procedure{
+	string name;
+	vector<Argument> args;
+	string returnType;
+};
+
 /*
 *
 *	END STRUCT DEFINITIONS
@@ -144,6 +155,7 @@ string const REAL = "real";
 string const INT = "int";
 string const BOOL = "bool";
 string const STRING = "string";
+string const NONE = "";
 int const LOCAL = 0;
 int const GLOBAL = 1;
 int const CONST = 2;
@@ -160,6 +172,7 @@ vector<Variable> constants;
 stack<string> typeStack;
 vector<Literal> literals;
 vector<GoToLabel> gotos;
+vector<Procedure> procs;
 
 /*
 *
@@ -485,11 +498,88 @@ int signature_list(){
 }
 
 int proc_signature(){
+	string name = tok.lexeme;
+	Procedure proc;
+	vector<Argument> args;
 	if(match_token(tok.tokenName, "Identifier")){
-		if(formal_args() == FOUND && return_type() == FOUND){
-			return FOUND;
+		proc.name = name;
+		if(match_token(tok.lexeme, "(")){
+			string argName;
+			while(match_token(tok.tokenName, "Identifier")){
+				Argument arg;
+				arg.name = argName;
+				if(match_token(tok.lexeme, ":")){
+					string type;
+					if(match_token(tok.lexeme, "real")){
+						arg.type = REAL;
+					}else if(match_token(tok.lexeme, "bool")){
+						arg.type = BOOL;
+					}else if(match_token(tok.lexeme, "int")){
+						arg.type = INT;
+					}else if(match_token(tok.lexeme, "string")){
+						arg.type = STRING;
+					}else if(match_token(tok.tokenName, "Identifier")){
+						arg.type = type;
+					}
+					args.push_back(arg);
+
+					if(!match_token(tok.lexeme, ",")){
+						if(match_token(tok.lexeme, ")")){
+							if(match_token(tok.lexeme, ":")){
+								string returnType;
+								if(match_token(tok.lexeme, "real")){
+									returnType = REAL;
+								}else if(match_token(tok.lexeme, "bool")){
+									returnType = BOOL;
+								}else if(match_token(tok.lexeme, "int")){
+									returnType = INT;
+								}else if(match_token(tok.lexeme, "string")){
+								  	returnType = STRING;
+								}
+								proc.returnType = returnType;
+								proc.args = args;
+								procs.push_back(proc);
+								return FOUND;
+							}else{
+
+								proc.returnType = NONE;
+								procs.push_back(proc);
+								return FOUND;
+							}
+						}else{
+							error();
+						}
+					}
+				}else{
+					error();
+				}
+			}
+			if(match_token(tok.lexeme, ")")){
+				if(match_token(tok.lexeme, ":")){
+					string returnType = tok.lexeme;
+					if(match_token(tok.lexeme, "real")){
+						returnType = REAL;
+					}else if(match_token(tok.lexeme, "bool")){
+						returnType = BOOL;
+					}else if(match_token(tok.lexeme, "int")){
+						returnType = INT;
+					}else if(match_token(tok.lexeme, "string")){
+						returnType = STRING;
+					}
+					proc.returnType = returnType;
+					proc.args = args;
+					procs.push_back(proc);
+					return FOUND;
+				}
+				proc.returnType = NONE;
+				procs.push_back(proc);
+				return FOUND;
+			}else{
+				error();
+			}
+		}else{
+			error();
 		}
-		error();
 	}
 	return DOES_NOT_MATCH;
 }
@@ -872,10 +962,14 @@ int assign_statement(){
 int call_statement(){
 	if(match_token(tok.lexeme, "call")){
 		if(match_token(tok.tokenName, "Identifier")){
-			if(actual_args() == FOUND){
-				if(match_token(tok.lexeme, ";")){
-					return FOUND;
+			if(match_token(tok.lexeme, "(")){
+				while(expression() == FOUND){
+					if(!match_token(tok.lexeme, ",")){
+
+					}
 				}
+			}else{
+				error();
 			}
 		}
 		error();
