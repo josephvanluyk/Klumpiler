@@ -45,6 +45,8 @@ struct Procedure{
 	string name;
 	vector<Argument> args;
 	string returnType;
+	string entryLabel;
+	string exitLabel;
 };
 
 /*
@@ -134,6 +136,7 @@ Variable getVariable(string kName);
 void addAssign(string typeTwo, Variable var);
 string appendString(string str, int n);
 string getOffsetString(int offset);
+Procedure findProc(string name);
 /*
 *
 *	END FUNCTION DECLARATIONS
@@ -150,7 +153,7 @@ string getOffsetString(int offset);
 *	CONSTANT DECLARATIONS
 *
 */
-
+string currentProc = "";
 string const REAL = "real";
 string const INT = "int";
 string const BOOL = "bool";
@@ -501,6 +504,8 @@ int proc_signature(){
 	string name = tok.lexeme;
 	Procedure proc;
 	vector<Argument> args;
+	proc.entryLabel = "Entry_" + name;
+	proc.exitLabel = "Exit_" + name;
 	if(match_token(tok.tokenName, "Identifier")){
 		proc.name = name;
 		if(match_token(tok.lexeme, "(")){
@@ -673,12 +678,16 @@ int actual_arg(){
 
 int procedure_list(){
 	while(procedure() == FOUND){
+		localVars.clear();
+		gotos.clear();
 	}
 	return FOUND;
 }
 
 int procedure(){
 	storage = 0;
+
+
 	if(proc_head() == FOUND){
 		if(proc_body() == FOUND){
 			for(int i = 0; i < gotos.size(); i++){
@@ -690,6 +699,7 @@ int procedure(){
 
 			addLine("", "mov", "esp, ebp", "");
 			addLine("", "pop", "ebp", "");
+			addLine("", "ret", "", "Return control to calling function");
 			return FOUND;
 		}
 		error();
@@ -699,7 +709,9 @@ int procedure(){
 
 int proc_head(){
 	if(match_token(tok.lexeme, "procedure")){
+		string name = tok.lexeme;
 		if(match_token(tok.tokenName, "Identifier")){
+			currentProc = name;
 			if(match_token(tok.lexeme, ";")){
 				return FOUND;
 			}
@@ -711,6 +723,7 @@ int proc_head(){
 
 int proc_body(){
 	if(dcl_definitions(LOCAL) == FOUND){
+		addLine("Entry_" + currentProc, "", "", "");
 		addLine("", "push", "ebp", "Store base pointer");
 		addLine("", "mov", "ebp, esp", "Create new base pointer");
 		addLine("", "sub", appendString("esp, ", storage),  "");
@@ -961,15 +974,16 @@ int assign_statement(){
 
 int call_statement(){
 	if(match_token(tok.lexeme, "call")){
+		string name = tok.lexeme;
 		if(match_token(tok.tokenName, "Identifier")){
+			Procedure proc = findProc(name);
 			if(match_token(tok.lexeme, "(")){
-				while(expression() == FOUND){
-					if(!match_token(tok.lexeme, ",")){
-
-					}
+				//Process args
+				if(match_token(tok.lexeme, ")")){
+					addLine("", "call", proc.entryLabel, "");
+					//Remove args from stack
+					return FOUND;
 				}
-			}else{
-				error();
 			}
 		}
 		error();
@@ -981,7 +995,21 @@ int return_statement(){
 	if(match_token(tok.lexeme, "return")){
 
 			if(expression() == FOUND){
-
+					Procedure proc = findProc(currentProc);
+					if(proc.returnType == REAL){
+						if(typeStack.top() == REAL){
+							addLine("", "movsd", "xmm0, [esp]", "Move return value to xmm0");
+							addLine("", "add", "esp, 8", "");
+						}else if(typeStack.top() == INT){
+							addLine("", "fild", "dword [esp]", "");
+							addLine("", "fstp", "qword xmm0", "Move return value to xmm0");
+						}else{
+							cerr << "Invalid return type" << endl;
+							error();
+						}
+					}else{
+						addLine("", "pop", "eax", "Move return value to eax");
+					}
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
@@ -1748,4 +1776,17 @@ Variable getVariable(string kName){
 	error();
 	Variable v;
 	return v;
+}
+
+
+Procedure findProc(string name){
+	for(int i = 0; i < procs.size(); i++){
+
+		if(procs.at(i).name == name){
+			return procs.at(i);
+		}
+	}
+	cerr << "Proc not found: " << name << endl;
+	error();
+	return procs.at(0);
 }

@@ -2,14 +2,32 @@ global
 const
 type
 dcl
+	n : int;
+	fact : int;
 proc
-test(x : int, y : real) : real;
-test2(myvar : real, m : int) : string;
+factorial();
 procedure main;
 dcl
-	i : int;
 begin
-	readln(i);
-	writeln(i);
+	n := 8;
+	fact := 1;
+	call factorial();
+	writeln(fact);
+end
 
-end.
+procedure factorial;
+dcl
+	m : int;
+begin
+
+	if(n = 0) then
+		fact := 1;
+	else
+		do;
+			m := n;
+			n := n - 1;
+			call factorial();
+			fact := fact*m;
+		end;
+end
+.
