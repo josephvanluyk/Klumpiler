@@ -289,6 +289,8 @@ Label7:                                      	;Destination if while condition fa
                add       esp, 4              	;Clean up stack after printf
                jmp       Label0              	;Jump back to the top of while loop
 Label1:                                      	;Destination if while condition fails
+               mov       esp, ebp            
+               pop       ebp                 
                                              
                section   .data               
 realFrmt:      db        "%f", 0             	;Print real without \n
@@ -309,6 +311,3 @@ _x_:           resb(8)
 _sum_:         resb(8)                       
 _n_:           resb(4)                       
 _term_:        resb(8)                       
-               resb(4)                       
-               resb(8)                       
-               resb(8)                       

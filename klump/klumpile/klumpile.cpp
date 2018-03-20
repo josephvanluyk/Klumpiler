@@ -418,7 +418,11 @@ int dcl_list(int scope){
 				}
 				storage = id.offset;
 
-				globalVars.push_back(id);
+				if(id.scope == LOCAL){
+					localVars.push_back(id);
+				}else if(id.scope == GLOBAL){
+					globalVars.push_back(id);
+				}
 				if(match_token(tok.lexeme, ";")){
 					pass = true;
 				}
@@ -593,6 +597,9 @@ int procedure(){
 					error();
 				}
 			}
+
+			addLine("", "mov", "esp, ebp", "");
+			addLine("", "pop", "ebp", "");
 			return FOUND;
 		}
 		error();
@@ -753,14 +760,14 @@ int read_statement(){
 			string id = tok.lexeme;
 			while(match_token(tok.tokenName, "Identifier")){
 				Variable idToWrite;
-				for(int i = 0; i < globalVars.size(); i++){
-					Variable potential = globalVars.at(i);
-					if(potential.kName == id){
-						idToWrite = potential;
-					}
+				idToWrite = getVariable(id);
+				if(idToWrite.scope == GLOBAL){
+					addLine("", "push", idToWrite.aName, "Push address to input variable");
+				}else if(idToWrite.scope == LOCAL){
+					addLine("", "mov", "eax, ebp", "");
+					addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
+					addLine("", "push", "eax", "");
 				}
-
-				addLine("", "push", idToWrite.aName, "Push address to input variable");
 				if(idToWrite.type == INT){
 					addLine("", "push", "intFrmtIn", "");
 				}else if(idToWrite.type == REAL){

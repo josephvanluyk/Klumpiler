@@ -1,0 +1,13 @@
+global
+const
+type
+dcl
+proc
+procedure main;
+dcl
+	i : int;
+begin
+	readln(i);
+	writeln(i);	
+
+end.
