@@ -1282,11 +1282,27 @@ int comparison(){
 					typeStack.pop();
 					string typeOne = typeStack.top();
 					typeStack.pop();
-
+					string iftrue = generateLabel();
+					string end = generateLabel();
+					string opCode;
 					if(typeOne == INT && typeTwo == INT){
 						addLine("", "pop", "ebx", "Remove operands from stack for comparison");
 						addLine("", "pop", "eax", "");
 						addLine("", "cmp", "eax, ebx", "");
+						if(comparison == "="){
+							opCode = "je";
+						}else if(comparison == "<>"){
+							opCode = "jne";
+						}else if(comparison == ">"){
+							opCode = "jg";
+						}else if(comparison == ">="){
+							opCode = "jge";
+						}else if(comparison == "<"){
+							opCode = "jl";
+						}else if(comparison == "<="){
+							opCode = "jle";
+						}
+						addLine("", opCode, iftrue, "Push appropriate bool if based on comparison");
 					}else if ((typeOne == INT || typeOne == REAL) && (typeTwo == INT || typeTwo == REAL)){
 						if(typeOne == INT){
 							addLine("", "sub", "esp, 4", "Make room on stack to convert int to real");
@@ -1296,39 +1312,45 @@ int comparison(){
 							addLine("", "mov", "[esp + 4], eax", "");
 							addLine("", "fild", "dword [esp + 12]", "Load int to floating point stack for conversion");
 							addLine("", "fstp", "qword [esp + 8]", "Put new float back on stack");
+
 						}else if(typeTwo == INT){
 							addLine("", "sub", "esp, 4", "Make room on stack to convert int to real");
 							addLine("", "fild", "[esp + 4]", "Load int to floating point stack");
 							addLine("", "fstp", "qword [esp]", "Put new float back on stack");
 						}
-						addLine("", "fld", "qword [esp + 8]", "Put operands on stack for comparison");
-						addLine("", "fld", "qword [esp]", "");
-						addLine("", "add", "esp, 16", "Remove extra space on stack");
-						addLine("", "fcompp", "", "Complete comparison");
-						addLine("", "wait", "", "");
-						addLine("", "fstsw", "ax", "Copy fpu flags into cpu flags");
-						addLine("", "sahf", "", "");
+						/*
+							Compare two floating points on top of stack
+						*/
+						addLine("", "movsd", "xmm1, [esp]", "");
+						addLine("", "movsd", "xmm0, [esp + 8]", "");
+						addLine("", "add", "esp, 8", "");
+						if(comparison == "="){
+							opCode = "0";
+						}else if(comparison == "<>"){
+							opCode = "4";
+						}else if(comparison == ">"){
+							opCode = "6";
+						}else if(comparison == ">="){
+							opCode = "5";
+						}else if(comparison == "<"){
+							opCode = "1";
+						}else if(comparison == "<="){
+							opCode = "2";
+						}
+
+						addLine("", "cmpsd", "xmm0, xmm1, " + opCode, "Compare floating point");
+						addLine("", "movsd", "[esp], xmm0", "Put result on stack");
+						addLine("", "add", "esp, 4", "Throw away half of result");
+						addLine("", "pop", "eax", "");
+						addLine("", "cmp", "eax, 0", "Was the results 0's or 1's?");
+						addLine("", "jne", iftrue, "If it wasn't 0, jump to push 1");
 					}else{
 						cerr << "Unsupported operand for " << comparison << endl;
 						error();
 					}
-					string iftrue = generateLabel();
-					string end = generateLabel();
-					string opCode;
-					if(comparison == "="){
-						opCode = "je";
-					}else if(comparison == "<>"){
-						opCode = "jne";
-					}else if(comparison == ">"){
-						opCode = "jg";
-					}else if(comparison == ">="){
-						opCode = "jge";
-					}else if(comparison == "<"){
-						opCode = "jl";
-					}else if(comparison == "<="){
-						opCode = "jle";
-					}
-					addLine("", opCode, iftrue, "Push appropriate bool if based on comparison");
+
+
+
 					addLine("", "push", "0", "Push 0 for false comparison");
 					addLine("", "jmp", end, "Skip pushing 1");
 					addLine(iftrue, "", "", "Label if comparison was true");

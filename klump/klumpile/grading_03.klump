@@ -64,7 +64,6 @@ procedure sort;
     temp : real;
 
 begin { sort }
-  writeln(a, b);
   if (a > b)
     then do;
          temp := a;
