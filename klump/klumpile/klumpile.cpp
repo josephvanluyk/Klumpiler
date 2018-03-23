@@ -39,6 +39,7 @@ struct GoToLabel{
 struct Argument{
 	string type;
 	string name;
+	bool callBy;
 };
 
 struct Procedure{
@@ -137,6 +138,10 @@ void addAssign(string typeTwo, Variable var);
 string appendString(string str, int n);
 string getOffsetString(int offset);
 Procedure findProc(string name);
+void convertIntToReal();
+void processArgs(Procedure proc);
+void loadArgsToLocalVariables(Procedure proc);
+void removeArgsFromStack(Procedure proc);
 /*
 *
 *	END FUNCTION DECLARATIONS
@@ -153,7 +158,7 @@ Procedure findProc(string name);
 *	CONSTANT DECLARATIONS
 *
 */
-string currentProc = "";
+string currentProc = "main";
 string const REAL = "real";
 string const INT = "int";
 string const BOOL = "bool";
@@ -205,6 +210,11 @@ bool match_token(string a, string b){
 int main(){
 	sym = nextSym();
 	tok = getNext();
+	Procedure proc;
+	proc.name = "main";
+	proc.entryLabel = "Entry_" + proc.name;
+	proc.exitLabel = "Exit_" + proc.name;
+	procs.push_back(proc);
 	printIntro();
 	klump_program();
 	printOutro();
@@ -491,7 +501,9 @@ int signature_list(){
 	if(proc_signature() == FOUND){
 		while(match_token(tok.lexeme, ";")){
 			if(proc_signature() == FOUND){
+
 			}else{
+
 				return FOUND;
 			}
 		}
@@ -509,10 +521,15 @@ int proc_signature(){
 	if(match_token(tok.tokenName, "Identifier")){
 		proc.name = name;
 		if(match_token(tok.lexeme, "(")){
-			string argName;
+			bool callBy = false;
+			if(match_token(tok.lexeme, "var")){
+				callBy = true;
+			}
+			string argName = tok.lexeme;
 			while(match_token(tok.tokenName, "Identifier")){
 				Argument arg;
 				arg.name = argName;
+				arg.callBy = callBy;
 				if(match_token(tok.lexeme, ":")){
 					string type;
 					if(match_token(tok.lexeme, "real")){
@@ -546,7 +563,7 @@ int proc_signature(){
 								procs.push_back(proc);
 								return FOUND;
 							}else{
-
+								proc.args = args;
 								proc.returnType = NONE;
 								procs.push_back(proc);
 								return FOUND;
@@ -555,9 +572,17 @@ int proc_signature(){
 							error();
 						}
 					}
+
 				}else{
 					error();
 				}
+
+				if(match_token(tok.lexeme, "var")){
+					callBy = true;
+				}else{
+					callBy = false;
+				}
+				argName = tok.lexeme;
 			}
 			if(match_token(tok.lexeme, ")")){
 				if(match_token(tok.lexeme, ":")){
@@ -696,7 +721,8 @@ int procedure(){
 					error();
 				}
 			}
-
+			Procedure proc = findProc(currentProc);
+			addLine(proc.exitLabel, "", "", "");
 			addLine("", "mov", "esp, ebp", "");
 			addLine("", "pop", "ebp", "");
 			addLine("", "ret", "", "Return control to calling function");
@@ -712,6 +738,8 @@ int proc_head(){
 		string name = tok.lexeme;
 		if(match_token(tok.tokenName, "Identifier")){
 			currentProc = name;
+			Procedure proc = findProc(currentProc);
+			loadArgsToLocalVariables(proc);
 			if(match_token(tok.lexeme, ";")){
 				return FOUND;
 			}
@@ -929,13 +957,12 @@ int write_statement(){
 				}
 
 				typeStack.pop();
-				if(call == "writeln"){
-					printNewLine();
-				}
-
 				if(!match_token(tok.lexeme, ",")){
 					if(match_token(tok.lexeme, ")")){
 						if(match_token(tok.lexeme, ";")){
+							if(call == "writeln"){
+								printNewLine();
+							}
 							return FOUND;
 						}
 					}
@@ -979,8 +1006,10 @@ int call_statement(){
 			Procedure proc = findProc(name);
 			if(match_token(tok.lexeme, "(")){
 				//Process args
+				processArgs(proc);
 				if(match_token(tok.lexeme, ")")){
 					addLine("", "call", proc.entryLabel, "");
+					removeArgsFromStack(proc);
 					//Remove args from stack
 					return FOUND;
 				}
@@ -1493,8 +1522,22 @@ int factor(){
 	if(match_token(tok.tokenName, "Identifier")){
 		/*If it's followed by a qualifier, we have an lval*/
 		string next = tok.lexeme;
-		if(actual_args() == FOUND){
-			return FOUND;
+		if(match_token(tok.lexeme, "(")){
+			Procedure proc = findProc(id);
+			processArgs(proc);
+			if(match_token(tok.lexeme, ")")){
+				addLine("", "call", proc.entryLabel, "");
+				removeArgsFromStack(proc);
+				if(proc.returnType == REAL){
+					addLine("", "sub", "esp, 8", "");
+					addLine("", "movsd", "[esp], xmm0", "Push return value to stack");
+				}else{
+					addLine("", "push", "eax", "Push return value to stack");
+				}
+				typeStack.push(proc.returnType);
+				return FOUND;
+			}
+			error();
 		}else if(qualifier() == FOUND){
 			if(next != "." && next != "["){
 				Variable found = getVariable(id);
@@ -1695,6 +1738,17 @@ void printOutro(){
 		addLine(id.aName, "resb(" + size + ")", "", "");
 	};
 
+	for(int i = 0; i < constants.size(); i++){
+		Variable id = constants.at(i);
+		string size;
+		if(id.type == REAL){
+			size = "8";
+		}else{
+			size = "4";
+		}
+		addLine(id.aName, "resb(" + size + ")", "", "");
+	}
+
 
 }
 
@@ -1789,4 +1843,73 @@ Procedure findProc(string name){
 	cerr << "Proc not found: " << name << endl;
 	error();
 	return procs.at(0);
+}
+
+void convertIntToReal(){
+	addLine("", "fild", "[esp]", "Convert Int to Real");
+	addLine("", "sub", "esp, 4", "");
+	addLine("", "fstp", "qword [esp]", "Done converting int to real");
+}
+
+void processArgs(Procedure proc){
+	vector<Argument> args = proc.args;
+
+	for(int i = 0; i < args.size(); i++){
+
+		Argument arg = args.at(i);
+		if(arg.callBy){
+		}else{
+			if(expression() == FOUND){
+				if(typeStack.top() == arg.type){
+
+				}else if(typeStack.top() == INT && arg.type == REAL){
+					convertIntToReal();
+				}else{
+					error();
+				}
+				if(!match_token(tok.lexeme, ",")){
+					if(i != args.size() - 1){
+						error();
+					}
+				}
+			}else{
+				error();
+			}
+		}
+	}
+}
+
+void loadArgsToLocalVariables(Procedure proc){
+	int offset = -8;
+	vector<Argument> args = proc.args;
+	for(int i = args.size() - 1; i >= 0; i--){
+		Variable var;
+		Argument arg = args.at(i);
+		if(!arg.callBy){
+			var.scope = LOCAL;
+		}
+		var.kName = arg.name;
+		var.offset = offset;
+		var.type = arg.type;
+		if(arg.type == REAL){
+			offset = offset - 8;
+		}else{
+			offset = offset - 4;
+		}
+
+		localVars.push_back(var);
+	}
+
+}
+
+void removeArgsFromStack(Procedure proc){
+	int size = 0;
+	for(int i = 0; i < proc.args.size(); i++){
+		if(proc.args.at(i).type == REAL){
+			size += 8;
+		}else{
+			size += 4;
+		}
+	}
+	addLine("", "add", appendString("esp, ", size), "Remove args from stack");
 }

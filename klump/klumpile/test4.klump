@@ -1,0 +1,20 @@
+global
+const
+	x : 3;
+type
+dcl
+	ret : int;
+proc
+procedure main;
+dcl
+	x : real;
+	y : real;
+begin
+	if(10.0 > 1.0) then
+		writeln(1);
+	else
+		writeln(0);
+
+
+
+end.

@@ -1,0 +1,27 @@
+global
+const
+type
+dcl
+proc
+factorial(n : int) : int;
+
+procedure main;
+dcl
+	n : int;
+begin
+	write("Enter the value of n: ");
+	readln(n);
+	writeln(factorial(n));
+end
+
+procedure factorial;
+dcl
+begin
+	if(n = 0) then
+		return 1;
+	else
+		do;
+			return n*factorial(n-1);
+		end;
+end
+.

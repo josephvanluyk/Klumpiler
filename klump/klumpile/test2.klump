@@ -9,9 +9,11 @@ factorial();
 procedure main;
 dcl
 begin
-	n := 8;
+	write("Enter the value of n: ");
+	readln(n);
 	fact := 1;
 	call factorial();
+	write("n! = ");
 	writeln(fact);
 end
 
