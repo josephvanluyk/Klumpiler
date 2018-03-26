@@ -30,7 +30,7 @@ procedure isPrime;
 dcl
     i : int;
 begin
-    if(n = 1 or n = 0) then
+    if((n = 1) or (n = 0)) then
         return 1 = 0;
     i := 2;
     while(i < n)

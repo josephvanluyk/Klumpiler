@@ -10,7 +10,7 @@ dcl
 	n : int;
 begin
     n := 0;
-
+    writeln("Here");
     while(n < 10)
         do;
             if(n = 2) then

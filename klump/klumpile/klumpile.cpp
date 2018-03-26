@@ -133,8 +133,9 @@ void printOutro();
 void swapTopOfStack();
 void convertTopOfStackToFloat();
 void printNewLine();
+void loadAddr(Variable var);
 Variable getVariable(string kName);
-void addAssign(string typeTwo, Variable var);
+void addAssign(string typeTwo, string typeOne);
 string appendString(string str, int n);
 string getOffsetString(int offset);
 Procedure findProc(string name);
@@ -989,13 +990,13 @@ int assign_statement(){
 	if(match_token(tok.tokenName, "Identifier")){
 		/* Have we seen this identifier declared? */
 		Variable id  = getVariable(t.lexeme);
-
 		if(qualifier() == FOUND){								//Are we dealing with an Array/Record?
 			if(match_token(tok.lexeme, ":=")){
 				if(expression() == FOUND){						//Find an expression and push it to the stack
 					string typeTwo = typeStack.top();
 					typeStack.pop();
-					addAssign(typeTwo, id);
+                    loadAddr(id);
+					addAssign(typeTwo, id.type);
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
@@ -1835,36 +1836,31 @@ void printNewLine(){
 
 }
 
-void addAssign(string typeTwo, Variable var){
-	if(var.type == REAL){
+void addAssign(string typeTwo, string typeOne){
+	if(typeOne == REAL){
 		if(typeTwo == INT){
-			addLine("", "fild", "dword [esp]", "Load top of stack to floating point stack");
-			addLine("", "sub", "esp, 4", "Make room on stack for 64-bit float");
-			addLine("", "fstp", "qword [esp]", "Convert 32-bit int to 64-bit float");
+			addLine("", "fild", "dword [esp + 4]", "Load top of stack to floating point stack");
+			addLine("", "pop", "eax", "Store address in eax");
+            addLine("", "sub", "esp, 4", "Make room for new float");
+            addLine("", "push", "eax", "Push address back on stack");
+			addLine("", "fstp", "qword [esp + 4]", "Convert 32-bit int to 64-bit float");
 		}
-		if(var.scope == GLOBAL){
-			addLine("", "pop", "dword [" + var.aName + "]", "Pop top of stack in two parts");
-			addLine("", "pop", "dword [" + var.aName + "+ 4]", "");
-		}else if(var.scope == LOCAL){
-			addLine("", "lea", "esi, " + getOffsetString(var.offset), "Load address of local real");
-			addLine("", "pop", "dword [esi]", "Store first half of real");
-			addLine("", "lea", "esi, " + getOffsetString(var.offset - 4), "");
-			addLine("", "pop", "dword [esi]", "");
-		}
-	}else if(var.type == INT){
+		addLine("", "pop", "esi", "Pop address to esi");
+        addLine("", "pop", "eax", "");
+        addLine("", "pop", "ebx", "");
+        addLine("", "mov", "[esi + 4], ebx", "Assign real in two parts");
+        addLine("", "mov", "[esi], eax", "");
+	}else if(typeOne == INT){
 		if(typeTwo == REAL){
 			cerr << "Cannot convert float to int" << endl;
 			error();
 		}else if(typeTwo == INT){
-			if(var.scope == GLOBAL){
-				addLine("", "pop", "dword [" + var.aName + "]", "Pop top of stack to memory location");
-			}else if(var.scope == LOCAL){
-				addLine("", "lea", "esi, " + getOffsetString(var.offset), "Load address of local int");
-				addLine("", "pop", "dword [esi]", "");
-			}
+		    addLine("", "pop", "esi", "Pop address to esi");
+            addLine("", "pop", "dword [esi]", "Pop expression to address in esi");
 		}
-	}else if(var.type == STRING){
-		addLine("", "pop", "dword [" + var.aName + "]", "Pop memory location of string to string variable");
+	}else if(typeOne == STRING){
+		addLine("", "pop", "esi", "Address to esi");
+        addLine("", "pop", "dword [esi]", "Pop expression to address in esi");
 	}
 }
 
@@ -1974,4 +1970,14 @@ void removeArgsFromStack(Procedure proc){
 		}
 	}
 	addLine("", "add", appendString("esp, ", size), "Remove args from stack");
+}
+
+void loadAddr(Variable var){
+    if(var.scope == LOCAL){
+        addLine("", "lea", "eax, " + getOffsetString(var.offset), "Load address into eax");
+        addLine("", "push", "eax", "");
+    }else if(var.scope == GLOBAL){
+        addLine("", "lea", "eax, [" + var.aName + "]", "Load address into eax");
+        addLine("", "push", "eax", "");
+    }
 }
