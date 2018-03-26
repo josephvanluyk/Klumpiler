@@ -1463,7 +1463,6 @@ int term(){
 				typeStack.pop();
 				string typeOne = typeStack.top();
 				typeStack.pop();
-
 				if(typeOne == INT && typeTwo == INT){
 					addLine("", "pop", "ebx", "Remove operands from stack to mulop");
 					addLine("", "pop", "eax", "");
@@ -1483,7 +1482,17 @@ int term(){
                     }
 
 					addLine("", "push", "eax", "Push result to stack");
-				}else{
+				}else if(typeOne == BOOL && typeTwo == BOOL){
+                    if(op == "and"){
+                        addLine("", "pop", "ebx", "Pop operands from stack");
+                        addLine("", "pop", "eax", "");
+                        addLine("", "and", "eax, ebx", "Complete comparison");
+                        addLine("", "push", "eax", "Push result to stack");
+                        typeStack.push(BOOL);
+                    }else{
+                        error();
+                    }
+                }else{
 					bool swapped = false;
 					if(typeOne == INT && typeTwo == REAL){
 						swapped = true;
