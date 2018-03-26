@@ -9,20 +9,21 @@ procedure main;
 dcl
 	n : int;
 begin
-    if((1 = 0) or (1 = 1)) then
-        writeln("Ccorrect");
-    else
-        writeln("Incorrect");
+    n := 0;
 
-    if((1 = 1) or (2 = 2)) then
-        writeln("Correct");
-    else
-        writeln("Incorrect");
+    while(n < 10)
+        do;
+            if(n = 2) then
+                do;
+                    n := n + 1;
+                    next;
+                end;
+            if(n = 8) then
+                break;
+            writeln(n);
+            n := n + 1;
+        end;
 
-    if((2 = 3) or (4 = 7)) then
-        writeln("Incorrect");
-    else
-        writeln("Correct");
 
 end
 .

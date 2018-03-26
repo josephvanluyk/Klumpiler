@@ -178,6 +178,8 @@ vector<Variable> localVars;
 vector<Variable> constants;
 
 stack<string> typeStack;
+stack<string> nextStack;
+stack<string> breakStack;
 vector<Literal> literals;
 vector<GoToLabel> gotos;
 vector<Procedure> procs;
@@ -705,6 +707,12 @@ int procedure_list(){
 	while(procedure() == FOUND){
 		localVars.clear();
 		gotos.clear();
+        while(!nextStack.empty()){
+            nextStack.pop();
+        }
+        while(!breakStack.empty()){
+            breakStack.pop();
+        }
 	}
 	return FOUND;
 }
@@ -1154,6 +1162,8 @@ int while_statement(){
 		if(match_token(tok.lexeme, "(")){
 			string headOfWhileLoop = generateLabel();
 			string endOfWhileLoop = generateLabel();
+            nextStack.push(headOfWhileLoop);
+            breakStack.push(endOfWhileLoop);
 			addLine(headOfWhileLoop, "", "", "Start of while loop");
 			if(comparison() == FOUND){
 				if(typeStack.top() != BOOL){
@@ -1169,6 +1179,8 @@ int while_statement(){
 					if(compound_statement() == FOUND){
 						addLine("", "jmp", headOfWhileLoop, "Jump back to the top of while loop");
 						addLine(endOfWhileLoop, "", "", "Destination if while condition fails");
+                        nextStack.pop();
+                        breakStack.pop();
 						return FOUND;
 					}
 				}
@@ -1253,6 +1265,7 @@ int for_statement(){
 int next_statement(){
 	if(match_token(tok.lexeme, "next")){
 		if(match_token(tok.lexeme, ";")){
+            addLine("", "jmp", nextStack.top(), "Jump to top of loop");
 			return FOUND;
 		}
 		error();
@@ -1263,6 +1276,7 @@ int next_statement(){
 int break_statement(){
 	if(match_token(tok.lexeme, "break")){
 		if(match_token(tok.lexeme, ";")){
+            addLine("", "jmp", breakStack.top(), "Jump to end of loop");
 			return FOUND;
 		}
 		error();
