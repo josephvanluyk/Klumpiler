@@ -3,30 +3,14 @@ extern printf
 
 section .text
 main:
-	movsd xmm0, [x]
-	movsd xmm1, [y]
-
-	cmpsd xmm0, xmm1, 1
-	sub   esp, 8
-	movsd [esp], xmm0
-	add   esp, 4
-
-	pop eax
-	not eax
-	cmp eax, 0
-	je Equal
-	jmp NotEqual
-
-Equal:
-	push false
-	jmp end
-NotEqual:
-	push true
-	jmp end
-end:
-	push stringFrmt
-	call printf
-	add esp, 8
+    mov eax, -1
+    mov ebx, 3
+    cdq
+    idiv ebx
+    push edx
+    push intFrmt
+    call printf
+    add esp, 8
 
 
 section .bss

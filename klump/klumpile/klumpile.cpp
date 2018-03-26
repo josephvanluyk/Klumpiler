@@ -1039,6 +1039,7 @@ int return_statement(){
 					}else{
 						addLine("", "pop", "eax", "Move return value to eax");
 					}
+                    addLine("", "jmp", proc.exitLabel, "Jump to function exit");
 					if(match_token(tok.lexeme, ";")){
 						return FOUND;
 					}
@@ -1474,7 +1475,12 @@ int term(){
 						addLine("", "cdq", "", "Sign extend eax");
 						addLine("", "idiv", "ebx", "Divide operands");
 						typeStack.push(INT);
-					}
+					}else if(op == "%"){
+                        addLine("", "cdq", "", "Sign extend eax");
+                        addLine("", "idiv", "ebx", "Divide operands");
+                        addLine("", "mov", "eax, edx", "Move modulo result to eax");
+                        typeStack.push(INT);
+                    }
 
 					addLine("", "push", "eax", "Push result to stack");
 				}else{
