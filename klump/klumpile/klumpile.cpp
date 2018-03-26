@@ -1176,7 +1176,7 @@ int while_statement(){
 				addLine("", "cmp", "eax, ebx", "See if while condition is true");
 				addLine("", "jne", endOfWhileLoop, "If comparison is false, jump to end");
 				if(match_token(tok.lexeme, ")")){
-					if(compound_statement() == FOUND){
+					if(statement() == FOUND){
 						addLine("", "jmp", headOfWhileLoop, "Jump back to the top of while loop");
 						addLine(endOfWhileLoop, "", "", "Destination if while condition fails");
                         nextStack.pop();
