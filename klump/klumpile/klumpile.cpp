@@ -1406,7 +1406,18 @@ int simple_expression(){
 							typeStack.push(INT);
 						}
 						addLine("", "push", "eax", "Push result to stack");
-					}else{
+					}else if(typeOne == BOOL && typeTwo == BOOL){
+                        addLine("", "pop", "ebx", "Remove operands from stack for mulop");
+                        addLine("", "pop", "eax", "");
+                        if(op == "or"){
+                            addLine("", "or", "eax, ebx", "");
+                        }else{
+                            error();
+                        }
+                        typeStack.push(BOOL);
+                        addLine("", "push", "eax", "Push result to stack");
+
+                    }else{
 						bool swapped = false;
 						if(typeOne == INT && typeTwo == REAL){
 							swapped = true;

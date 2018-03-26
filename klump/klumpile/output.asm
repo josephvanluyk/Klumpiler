@@ -30,9 +30,9 @@ Label1:                                      	;End of comparison
 Label2:                                      	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
 Label3:                                      	;End of comparison
-               pop       ebx                 	;Pop operands from stack
+               pop       ebx                 	;Remove operands from stack for mulop
                pop       eax                 
-               and       eax, ebx            	;Complete comparison
+               or        eax, ebx            
                push      eax                 	;Push result to stack
                pop       eax                 	;Remove bool from stack
                mov       ebx, 0              
@@ -77,9 +77,9 @@ Label9:                                      	;End of comparison
 Label10:                                     	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
 Label11:                                     	;End of comparison
-               pop       ebx                 	;Pop operands from stack
+               pop       ebx                 	;Remove operands from stack for mulop
                pop       eax                 
-               and       eax, ebx            	;Complete comparison
+               or        eax, ebx            
                push      eax                 	;Push result to stack
                pop       eax                 	;Remove bool from stack
                mov       ebx, 0              
@@ -124,9 +124,9 @@ Label17:                                     	;End of comparison
 Label18:                                     	;Label if comparison was true
                push      1                   	;Push 1 for true comparison
 Label19:                                     	;End of comparison
-               pop       ebx                 	;Pop operands from stack
+               pop       ebx                 	;Remove operands from stack for mulop
                pop       eax                 
-               and       eax, ebx            	;Complete comparison
+               or        eax, ebx            
                push      eax                 	;Push result to stack
                pop       eax                 	;Remove bool from stack
                mov       ebx, 0              
@@ -163,8 +163,8 @@ intFrmtIn:     db        "%i", 0             	;Read int
 stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
-Label6:        db        "Incorrect", 0      
-Label7:        db        "Correct", 0        
+Label6:        db        "Ccorrect", 0       
+Label7:        db        "Incorrect", 0      
 Label14:       db        "Correct", 0        
 Label15:       db        "Incorrect", 0      
 Label22:       db        "Incorrect", 0      

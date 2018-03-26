@@ -9,17 +9,17 @@ procedure main;
 dcl
 	n : int;
 begin
-    if((1 = 0) and (1 = 1)) then
-        writeln("Incorrect");
-    else
-        writeln("Correct");
-
-    if((1 = 1) and (2 = 2)) then
-        writeln("Correct");
+    if((1 = 0) or (1 = 1)) then
+        writeln("Ccorrect");
     else
         writeln("Incorrect");
 
-    if((2 = 3) and (4 = 7)) then
+    if((1 = 1) or (2 = 2)) then
+        writeln("Correct");
+    else
+        writeln("Incorrect");
+
+    if((2 = 3) or (4 = 7)) then
         writeln("Incorrect");
     else
         writeln("Correct");
