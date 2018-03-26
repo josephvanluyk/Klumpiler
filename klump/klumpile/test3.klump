@@ -7,22 +7,22 @@ proc
 
 procedure main;
 dcl
-	n : int;
+	i : int;
+    j : int;
+    k : int;
 begin
-    n := 0;
-    writeln("Here");
-    while(n < 10)
+    for i := 0 to 10
         do;
-            if(n = 2) then
-                do;
-                    n := n + 1;
-                    next;
-                end;
-            if(n = 8) then
-                break;
-            writeln(n);
-            n := n + 1;
+            writeln(i);
         end;
+    {k := 1;}
+    for j := 10 downto 1
+        do;
+            if(j % 2 = 0) then
+                next;
+            writeln(j);
+        end;
+
 
 
 end

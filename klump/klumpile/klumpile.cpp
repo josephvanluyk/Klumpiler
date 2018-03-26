@@ -1245,12 +1245,57 @@ int case_list(){
 
 int for_statement(){
 	if(match_token(tok.lexeme, "for")){
+        Variable id = getVariable(tok.lexeme);
+        if(!(id.type == INT)){
+            cerr << "Cannot use " << id.type << " as loop counter" << endl;
+        }
+        string topLabel = generateLabel();
+        string exitLabel = generateLabel();
+        string nextLabel = generateLabel();
+        breakStack.push(exitLabel);
+        nextStack.push(nextLabel);
 		if(match_token(tok.tokenName, "Identifier")){
 			if(match_token(tok.lexeme, ":=")){
 				if(expression() == FOUND){
+                    loadAddr(id);
+                    string exprType = typeStack.top();
+                    typeStack.pop();
+                    addAssign(exprType, id.type);
+                    string direction = tok.lexeme;
 					if(match_token(tok.lexeme, "to") || match_token(tok.lexeme, "downto")){
+                        addLine(topLabel, "", "", "Begin compiling for expression");
 						if(expression() == FOUND){
+                            if(!(typeStack.top() == INT)){
+                                cerr << "Invalid type for for-loop condition: " << typeStack.top();
+                                error();
+                            }
+                            typeStack.pop();
+                            loadAddr(id);
+                            addLine("", "pop", "esi", "Pop address to counter variable");
+                            addLine("", "mov", "dword eax, [esi]", "");
+                            addLine("", "pop", "ebx", "Remove for-condition for comparison");
+                            addLine("", "cmp", "eax, ebx", "");
+                            if(direction == "downto"){
+                                addLine("", "jl", exitLabel, "");
+                            }else{
+                                addLine("", "jg", exitLabel, "");
+                            }
 							if(statement() == FOUND){
+                                addLine(nextLabel, "", "", "End-of-loop maintenance");
+                                loadAddr(id);
+                                addLine("", "pop", "esi", "");
+                                addLine("", "mov", "dword eax, [esi]", "");
+                                if(direction == "downto"){
+                                    addLine("", "dec", "eax", "Decrmeent Loop Counter");
+                                }else{
+                                    addLine("", "inc", "eax", "Increment Loop Counter");
+                                }
+                                addLine("", "mov", "[esi], eax", "Put updated Loop Counter into memory location");
+                                addLine("", "jmp", topLabel, "");
+                                addLine(exitLabel, "", "", "Exit destination for loop");
+                                addLine("", "add", "esp, 4", "Remove counter from stack");
+                                nextStack.pop();
+                                breakStack.pop();
 								return FOUND;
 							}
 						}
