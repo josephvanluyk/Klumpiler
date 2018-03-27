@@ -2,6 +2,7 @@
 #include<string>
 #include "token.h"
 #include<vector>
+#include<fstream>
 
 std::string nextSym();
 int n = 1;
@@ -13,7 +14,7 @@ std::string reservedWords[] = {"global", "const", "number", "decimal", "cstring"
 								"readln", "writeln", "call", "return", "goto", "do", "if", "then", "else", "while",
 								"case", "default", "for", "to", "downto", "next", "break", "not", "or", "and"};
 std::string sym;
-
+std::ifstream inFile;
 
 //REQUIRES: sym to be set up with nextSym()
 token getNext(void){
@@ -180,7 +181,12 @@ top:
 
 
 std::string nextSym(){
-	char chr = std::cin.get();
+	char chr = inFile.get();
 	std::string s = std::string(1, chr);
 	return s;
+}
+
+void setInFile(std::string fileName){
+    inFile.open(fileName.c_str());
+
 }

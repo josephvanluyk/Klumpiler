@@ -152,7 +152,7 @@ void removeArgsFromStack(Procedure proc);
 
 
 
-
+ofstream outFile;
 
 /*
 *
@@ -211,7 +211,28 @@ bool match_token(string a, string b){
 	return false;
 }
 
-int main(){
+void setupInput(int argc, char** argv){
+    if(argc <= 1){
+        cerr << "Invalid input file" << endl;
+        exit(EXIT_FAILURE);
+    }
+    setInFile(argv[1]);
+}
+
+void setupOptions(int argc, char** argv){
+    string outFileName = "a.out";
+    for(int i = 2; i < argc; i++){
+        string option = argv[i];
+        if(option == "-o"){
+            i++;
+            outFileName = argv[i];
+        }
+    }
+    outFile.open(outFileName.c_str());
+}
+int main(int argc, char** argv){
+    setupInput(argc, argv);
+    setupOptions(argc, argv);
 	sym = nextSym();
 	tok = getNext();
 	Procedure proc;
@@ -1775,21 +1796,22 @@ int qualifier(){
 
 
 void addLine(string label, string opcode, string operands, string comment){
+
   if (label != "")
-	 cout << setw(15) << left << label + ":";
+	 outFile << setw(15) << left << label + ":";
   else
-	 cout << setw(15) << left << " ";
+	 outFile << setw(15) << left << " ";
   if (opcode != "")
-	 cout << setw(10) << left << opcode;
+	 outFile << setw(10) << left << opcode;
   else
-	 cout << setw(10) << left << " ";
+	 outFile << setw(10) << left << " ";
   if (operands != "")
-	 cout << setw(20) << left << operands;
+	 outFile << setw(20) << left << operands;
   else
-	 cout << setw(20) << left << " ";
+	 outFile << setw(20) << left << " ";
   if (comment != "")
-	 cout << "\t" << ";" <<  comment;
-  cout << endl;
+	 outFile << "\t" << ";" <<  comment;
+  outFile << endl;
 }
 
 
@@ -1983,7 +2005,7 @@ void processArgs(Procedure proc){
                 if(var.type == arg.type){
                     loadAddr(var);
                 }else{
-                    cout << "Actual arg doesn't match formal arg" << endl;
+                    cerr << "Actual arg doesn't match formal arg" << endl;
                     error();
                 }
                 if(!match_token(tok.lexeme, ",")){

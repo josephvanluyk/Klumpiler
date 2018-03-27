@@ -7,128 +7,348 @@ main:
 Entry_main:                                  
                push      ebp                 	;Store base pointer
                mov       ebp, esp            	;Create new base pointer
-               sub       esp, 4              
-               push      Label0              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      Label1              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      Label2              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      Label3              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
+               sub       esp, 20             
+Label0:                                      	;Start of while loop
+               push      1                   	;Push int literal to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack for comparison
+               pop       eax                 
+               cmp       eax, ebx            
+               je        Label2              	;Push appropriate bool if based on comparison
+               push      0                   	;Push 0 for false comparison
+               jmp       Label3              	;Skip pushing 1
+Label2:                                      	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label3:                                      	;End of comparison
+               pop       eax                 	;Remove bool to test while condition
+               mov       ebx, 1              
+               cmp       eax, ebx            	;See if while condition is true
+               jne       Label1              	;If comparison is false, jump to end
+               push      0                   	;Push int literal to stack
+               lea       eax, [_n_]          	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
                push      Label4              	;Push address of string literal to stack
                push      stringFrmt          	;Push format string for printf
                call      printf              
                add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      Label5              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               mov       eax, ebp            
-               sub       eax, 4              	;Subtract offset from ebp to find address of input variable
-               push      eax                 
-               push      intFrmtIn           
+               push      _x_                 	;Push address to input variable
+               push      realFrmtIn          
                call      scanf               	;Retrieve input from user
                add       esp, 8              	;Remove arguments from stack
-Label6:        call      getchar             	;Remove characters until \n
+Label5:        call      getchar             	;Remove characters until \n
                cmp       eax, 0xA            
-               jne       Label6              	;If the character isn't \n, continue removing
-               push      Label7              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      Label8              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      dword [ebp - 4]     	;Push local var to stack
-               pop       eax                 	;Pop case expression to eax
+               jne       Label5              	;If the character isn't \n, continue removing
+               push      0                   	;Push int literal to stack
+               lea       eax, [_sum_]        	;Load address into eax
+               push      eax                 
+               fild      dword [esp + 4]     	;Load top of stack to floating point stack
+               pop       eax                 	;Store address in eax
+               sub       esp, 4              	;Make room for new float
+               push      eax                 	;Push address back on stack
+               fstp      qword [esp + 4]     	;Convert 32-bit int to 64-bit float
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+Label6:                                      	;Start of while loop
+               push      dword [_n_]         	;Push global var to stack
+               push      30                  	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack for comparison
+               pop       eax                 
+               cmp       eax, ebx            
+               jl        Label8              	;Push appropriate bool if based on comparison
+               push      0                   	;Push 0 for false comparison
+               jmp       Label9              	;Skip pushing 1
+Label8:                                      	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label9:                                      	;End of comparison
+               pop       eax                 	;Remove bool to test while condition
+               mov       ebx, 1              
+               cmp       eax, ebx            	;See if while condition is true
+               jne       Label7              	;If comparison is false, jump to end
                push      1                   	;Push int literal to stack
-               pop       ebx                 	;Remove case instance value from stack
-               cmp       eax, ebx            	;Compare case expression to instance
-               jne       Label10             
-               push      Label11             	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               jmp       Label9              	;Jump to end of case_statement
-Label10:                                     	;Try next case instance
+               pop       eax                 	;Pop top of stack to negate
+               neg       eax                 
+               push      eax                 	;Push negated term to stack
+               lea       eax, [_term_]       	;Load address into eax
+               push      eax                 
+               fild      dword [esp + 4]     	;Load top of stack to floating point stack
+               pop       eax                 	;Store address in eax
+               sub       esp, 4              	;Make room for new float
+               push      eax                 	;Push address back on stack
+               fstp      qword [esp + 4]     	;Convert 32-bit int to 64-bit float
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      dword [_n_]         	;Push global var to stack
                push      2                   	;Push int literal to stack
-               pop       ebx                 	;Remove case instance value from stack
-               cmp       eax, ebx            	;Compare case expression to instance
-               jne       Label12             
-               push      Label13             	;Push address of string literal to stack
+               pop       ebx                 	;Remove operands from stack to mulop
+               pop       eax                 
+               cdq                           	;Sign extend eax
+               idiv      ebx                 	;Divide operands
+               push      eax                 	;Push result to stack
+               push      dword [_n_]         	;Push global var to stack
+               push      dword [Label10 + 4] 	;Push value of real literal to stack in two parts
+               push      dword [Label10]     
+               movsd     xmm0, [esp]         	;Switch order of operands on stack
+               mov       eax, [esp + 8]      
+               movsd     [esp + 4], xmm0     
+               mov       [esp], eax          	;Finish pushing in reverse order
+               fild      dword [esp]         	;Convert int on stack to float
+               sub       esp, 4              	;Make room on stack for float
+               fstp      qword [esp]         	;Put new float on stack
+               movsd     xmm1, [esp]         	;Remove operands from stack to mulop
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              	;Remove extra space from stack
+               divsd     xmm1, xmm0          	;Divide in reverse order
+               movsd     xmm0, xmm1          	;Move result to xmm0
+               movsd     [esp], xmm0         	;Push result to stack
+               sub       esp, 4              	;Make room on stack to convert int to real
+               mov       eax, [esp + 4]      	;Move real to new stack location in two parts
+               mov       [esp], eax          
+               mov       eax, [esp + 8]      	;Move to eax first because mov doesn't accept two memory locations
+               mov       [esp + 4], eax      
+               fild      dword [esp + 12]    	;Load int to floating point stack for conversion
+               fstp      qword [esp + 8]     	;Put new float back on stack
+               movsd     xmm1, [esp]         
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              
+               cmpsd     xmm0, xmm1, 0       	;Compare floating point
+               movsd     [esp], xmm0         	;Put result on stack
+               add       esp, 4              	;Throw away half of result
+               pop       eax                 
+               cmp       eax, 0              	;Was the results 0's or 1's?
+               jne       Label11             	;If it wasn't 0, jump to push 1
+               push      0                   	;Push 0 for false comparison
+               jmp       Label12             	;Skip pushing 1
+Label11:                                     	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label12:                                     	;End of comparison
+               pop       eax                 	;Remove bool from stack
+               mov       ebx, 0              
+               cmp       eax, ebx            	;Compare bool to 0
+               je        Label13             	;If bool is 0, jump to the else clause
+               push      1                   	;Push int literal to stack
+               lea       eax, [_term_]       	;Load address into eax
+               push      eax                 
+               fild      dword [esp + 4]     	;Load top of stack to floating point stack
+               pop       eax                 	;Store address in eax
+               sub       esp, 4              	;Make room for new float
+               push      eax                 	;Push address back on stack
+               fstp      qword [esp + 4]     	;Convert 32-bit int to 64-bit float
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               jmp       Label14             	;Skip the else clause
+Label13:                                     	;Beginning of else clause
+Label14:                                     	;End of else clause
+               push      0                   	;Push int literal to stack
+               lea       eax, [ebp - 4]      	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+Label15:                                     	;Start of while loop
+               push      dword [ebp - 4]     	;Push local var to stack
+               push      2                   	;Push int literal to stack
+               push      dword [_n_]         	;Push global var to stack
+               pop       ebx                 	;Remove operands from stack to mulop
+               pop       eax                 
+               imul      eax, ebx            
+               push      eax                 	;Push result to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack to addop
+               pop       eax                 
+               add       eax, ebx            	;Add operands
+               push      eax                 	;Push result to stack
+               pop       ebx                 	;Remove operands from stack for comparison
+               pop       eax                 
+               cmp       eax, ebx            
+               jl        Label17             	;Push appropriate bool if based on comparison
+               push      0                   	;Push 0 for false comparison
+               jmp       Label18             	;Skip pushing 1
+Label17:                                     	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label18:                                     	;End of comparison
+               pop       eax                 	;Remove bool to test while condition
+               mov       ebx, 1              
+               cmp       eax, ebx            	;See if while condition is true
+               jne       Label16             	;If comparison is false, jump to end
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
+               push      dword [_term_]      
+               push      dword [_x_ + 4]     	;Push global real to stack in two parts
+               push      dword [_x_]         
+               movsd     xmm1, [esp]         	;Remove operands from stack to mulop
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              	;Remove extra space from stack
+               mulsd     xmm0, xmm1          	;Multiply floating point operands
+               movsd     [esp], xmm0         	;Push result to stack
+               lea       eax, [_term_]       	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      dword [ebp - 4]     	;Push local var to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack to addop
+               pop       eax                 
+               add       eax, ebx            	;Add operands
+               push      eax                 	;Push result to stack
+               lea       eax, [ebp - 4]      	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+               jmp       Label15             	;Jump back to the top of while loop
+Label16:                                     	;Destination if while condition fails
+               push      1                   	;Push int literal to stack
+               lea       eax, [ebp - 12]     	;Load address into eax
+               push      eax                 
+               fild      dword [esp + 4]     	;Load top of stack to floating point stack
+               pop       eax                 	;Store address in eax
+               sub       esp, 4              	;Make room for new float
+               push      eax                 	;Push address back on stack
+               fstp      qword [esp + 4]     	;Convert 32-bit int to 64-bit float
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      1                   	;Push int literal to stack
+               lea       eax, [ebp - 4]      	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+Label19:                                     	;Start of while loop
+               push      dword [ebp - 4]     	;Push local var to stack
+               push      2                   	;Push int literal to stack
+               push      dword [_n_]         	;Push global var to stack
+               pop       ebx                 	;Remove operands from stack to mulop
+               pop       eax                 
+               imul      eax, ebx            
+               push      eax                 	;Push result to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack to addop
+               pop       eax                 
+               add       eax, ebx            	;Add operands
+               push      eax                 	;Push result to stack
+               pop       ebx                 	;Remove operands from stack for comparison
+               pop       eax                 
+               cmp       eax, ebx            
+               jle       Label21             	;Push appropriate bool if based on comparison
+               push      0                   	;Push 0 for false comparison
+               jmp       Label22             	;Skip pushing 1
+Label21:                                     	;Label if comparison was true
+               push      1                   	;Push 1 for true comparison
+Label22:                                     	;End of comparison
+               pop       eax                 	;Remove bool to test while condition
+               mov       ebx, 1              
+               cmp       eax, ebx            	;See if while condition is true
+               jne       Label20             	;If comparison is false, jump to end
+               push      dword [ebp - 8]     	;Push local real to stack in two parts
+               push      dword [ebp - 12]    
+               push      dword [ebp - 4]     	;Push local var to stack
+               fild      dword [esp]         	;Convert int on stack to float
+               sub       esp, 4              	;Make room on stack for float
+               fstp      qword [esp]         	;Put new float on stack
+               movsd     xmm1, [esp]         	;Remove operands from stack to mulop
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              	;Remove extra space from stack
+               mulsd     xmm0, xmm1          	;Multiply floating point operands
+               movsd     [esp], xmm0         	;Push result to stack
+               lea       eax, [ebp - 12]     	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      dword [ebp - 4]     	;Push local var to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack to addop
+               pop       eax                 
+               add       eax, ebx            	;Add operands
+               push      eax                 	;Push result to stack
+               lea       eax, [ebp - 4]      	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+               jmp       Label19             	;Jump back to the top of while loop
+Label20:                                     	;Destination if while condition fails
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
+               push      dword [_term_]      
+               push      dword [ebp - 8]     	;Push local real to stack in two parts
+               push      dword [ebp - 12]    
+               movsd     xmm1, [esp]         	;Remove operands from stack to mulop
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              	;Remove extra space from stack
+               divsd     xmm0, xmm1          	;Divide floating point operands
+               movsd     [esp], xmm0         	;Push result to stack
+               lea       eax, [_term_]       	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      dword [_sum_ + 4]   	;Push global real to stack in two parts
+               push      dword [_sum_]       
+               push      dword [_term_ + 4]  	;Push global real to stack in two parts
+               push      dword [_term_]      
+               movsd     xmm1, [esp]         	;Put top of stack into floating point registers
+               movsd     xmm0, [esp + 8]     
+               add       esp, 8              	;Remove extra space from stack
+               addsd     xmm0, xmm1          	;Add operands
+               movsd     [esp], xmm0         	;Push result to top of stack
+               lea       eax, [_sum_]        	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               push      dword [_n_]         	;Push global var to stack
+               push      1                   	;Push int literal to stack
+               pop       ebx                 	;Remove operands from stack to addop
+               pop       eax                 
+               add       eax, ebx            	;Add operands
+               push      eax                 	;Push result to stack
+               lea       eax, [_n_]          	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+               jmp       Label6              	;Jump back to the top of while loop
+Label7:                                      	;Destination if while condition fails
+               push      Label23             	;Push address of string literal to stack
                push      stringFrmt          	;Push format string for printf
                call      printf              
                add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
+               push      dword [_x_ + 4]     	;Push global real to stack in two parts
+               push      dword [_x_]         
+               push      realFrmt            	;Push format string for printf
                call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               jmp       Label9              	;Jump to end of case_statement
-Label12:                                     	;Try next case instance
-               push      3                   	;Push int literal to stack
-               pop       ebx                 	;Remove case instance value from stack
-               cmp       eax, ebx            	;Compare case expression to instance
-               jne       Label14             
-               push      Label15             	;Push address of string literal to stack
+               add       esp, 12             
+               push      Label24             	;Push address of string literal to stack
                push      stringFrmt          	;Push format string for printf
                call      printf              
                add       esp, 8              
+               push      dword [_sum_ + 4]   	;Push global real to stack in two parts
+               push      dword [_sum_]       
+               push      realFrmt            	;Push format string for printf
+               call      printf              
+               add       esp, 12             
                push      NewLine             	;Push newline to stack for printf
                call      printf              
                add       esp, 4              	;Clean up stack after printf
-               jmp       Label9              	;Jump to end of case_statement
-Label14:                                     	;Try next case instance
-               push      4                   	;Push int literal to stack
-               pop       ebx                 	;Remove case instance value from stack
-               cmp       eax, ebx            	;Compare case expression to instance
-               jne       Label16             
-               push      Label17             	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               jmp       Label9              	;Jump to end of case_statement
-Label16:                                     	;Try next case instance
-               push      Label18             	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-Label9:                                      	;End of case statement
+               jmp       Label0              	;Jump back to the top of while loop
+Label1:                                      	;Destination if while condition fails
 Exit_main:                                   
                mov       esp, ebp            
                pop       ebp                 
@@ -143,18 +363,13 @@ intFrmtIn:     db        "%i", 0             	;Read int
 stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
-Label0:        db        "enter class status:", 0
-Label1:        db        "  1 = freshman", 0 
-Label2:        db        "  2 = sophomore", 0
-Label3:        db        "  3 = junior", 0   
-Label4:        db        "  4 = senior", 0   
-Label5:        db        "     enter status: ", 0
-Label7:        db        "", 0               
-Label8:        db        "student status: ", 0
-Label11:       db        "freshman", 0       
-Label13:       db        "sophomore", 0      
-Label15:       db        "junior", 0         
-Label17:       db        "senior", 0         
-Label18:       db        "do not know", 0    
+Label4:        db        "Please enter a value of x: ", 0
+Label10:       dq        2.0                 
+Label23:       db        "sin(", 0           
+Label24:       db        ") = ", 0           
                                              
                section   .bss                
+_x_:           resb(8)                       
+_sum_:         resb(8)                       
+_n_:           resb(4)                       
+_term_:        resb(8)                       
