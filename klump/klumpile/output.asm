@@ -7,96 +7,73 @@ main:
 Entry_main:                                  
                push      ebp                 	;Store base pointer
                mov       ebp, esp            	;Create new base pointer
-               sub       esp, 12             
-               push      0                   	;Push int literal to stack
-               lea       eax, [ebp - 4]      	;Load address into eax
-               push      eax                 
-               pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-Label0:                                      	;Begin compiling for expression
-               push      10                  	;Push int literal to stack
-               lea       eax, [ebp - 4]      	;Load address into eax
-               push      eax                 
-               pop       esi                 	;Pop address to counter variable
-               mov       dword eax, [esi]    
-               pop       ebx                 	;Remove for-condition for comparison
-               cmp       eax, ebx            
-               jg        Label1              
-               push      dword [ebp - 4]     	;Push local var to stack
-               push      intFrmt             	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-Label2:                                      	;End-of-loop maintenance
-               lea       eax, [ebp - 4]      	;Load address into eax
-               push      eax                 
-               pop       esi                 
-               mov       dword eax, [esi]    
-               inc       eax                 	;Increment Loop Counter
-               mov       [esi], eax          	;Put updated Loop Counter into memory location
-               jmp       Label0              
-Label1:                                      	;Exit destination for loop
-               add       esp, 4              	;Remove counter from stack
-               push      10                  	;Push int literal to stack
+               sub       esp, 16             
+               push      dword [Label0 + 4]  	;Push value of real literal to stack in two parts
+               push      dword [Label0]      
                lea       eax, [ebp - 8]      	;Load address into eax
                push      eax                 
                pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-Label3:                                      	;Begin compiling for expression
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
                push      1                   	;Push int literal to stack
+               lea       eax, [ebp - 12]     	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
+               push      1                   	;Push int literal to stack
+               lea       eax, [ebp - 16]     	;Load address into eax
+               push      eax                 
+               pop       esi                 	;Pop address to esi
+               pop       dword [esi]         	;Pop expression to address in esi
                lea       eax, [ebp - 8]      	;Load address into eax
                push      eax                 
-               pop       esi                 	;Pop address to counter variable
-               mov       dword eax, [esi]    
-               pop       ebx                 	;Remove for-condition for comparison
-               cmp       eax, ebx            
-               jl        Label4              
-               push      dword [ebp - 8]     	;Push local var to stack
-               push      2                   	;Push int literal to stack
-               pop       ebx                 	;Remove operands from stack to mulop
-               pop       eax                 
-               cdq                           	;Sign extend eax
-               idiv      ebx                 	;Divide operands
-               mov       eax, edx            	;Move modulo result to eax
-               push      eax                 	;Push result to stack
-               push      0                   	;Push int literal to stack
-               pop       ebx                 	;Remove operands from stack for comparison
-               pop       eax                 
-               cmp       eax, ebx            
-               je        Label6              	;Push appropriate bool if based on comparison
-               push      0                   	;Push 0 for false comparison
-               jmp       Label7              	;Skip pushing 1
-Label6:                                      	;Label if comparison was true
-               push      1                   	;Push 1 for true comparison
-Label7:                                      	;End of comparison
-               pop       eax                 	;Remove bool from stack
-               mov       ebx, 0              
-               cmp       eax, ebx            	;Compare bool to 0
-               je        Label8              	;If bool is 0, jump to the else clause
-               jmp       Label5              	;Jump to top of loop
-               jmp       Label9              	;Skip the else clause
-Label8:                                      	;Beginning of else clause
-Label9:                                      	;End of else clause
-               push      dword [ebp - 8]     	;Push local var to stack
+               lea       eax, [ebp - 12]     	;Load address into eax
+               push      eax                 
+               push      dword [ebp - 16]    	;Push local var to stack
+               call      Entry_testone       
+               add       esp, 12             	;Remove args from stack
+               push      dword [ebp - 4]     	;Push local real to stack in two parts
+               push      dword [ebp - 8]     
+               push      realFrmt            	;Push format string for printf
+               call      printf              
+               add       esp, 12             
+               push      Label1              	;Push address of string literal to stack
+               push      stringFrmt          	;Push format string for printf
+               call      printf              
+               add       esp, 8              
+               push      dword [ebp - 12]    	;Push local var to stack
+               push      intFrmt             	;Push format string for printf
+               call      printf              
+               add       esp, 8              
+               push      Label2              	;Push address of string literal to stack
+               push      stringFrmt          	;Push format string for printf
+               call      printf              
+               add       esp, 8              
+               push      dword [ebp - 16]    	;Push local var to stack
                push      intFrmt             	;Push format string for printf
                call      printf              
                add       esp, 8              
                push      NewLine             	;Push newline to stack for printf
                call      printf              
                add       esp, 4              	;Clean up stack after printf
-Label5:                                      	;End-of-loop maintenance
-               lea       eax, [ebp - 8]      	;Load address into eax
-               push      eax                 
-               pop       esi                 
-               mov       dword eax, [esi]    
-               dec       eax                 	;Decrmeent Loop Counter
-               mov       [esi], eax          	;Put updated Loop Counter into memory location
-               jmp       Label3              
-Label4:                                      	;Exit destination for loop
-               add       esp, 4              	;Remove counter from stack
 Exit_main:                                   
+               mov       esp, ebp            
+               pop       ebp                 
+               ret                           	;Return control to calling function
+Entry_testone:                               
+               push      ebp                 	;Store base pointer
+               mov       ebp, esp            	;Create new base pointer
+               sub       esp, 0              
+               push      dword [ebp - -16]   	;Push address of callby variable to stack
+               push      realFrmtIn          
+               call      scanf               	;Retrieve input from user
+               add       esp, 8              	;Remove arguments from stack
+Label3:        call      getchar             	;Remove characters until \n
+               cmp       eax, 0xA            
+               jne       Label3              	;If the character isn't \n, continue removing
+Exit_testone:                                
                mov       esp, ebp            
                pop       ebp                 
                ret                           	;Return control to calling function
@@ -110,5 +87,8 @@ intFrmtIn:     db        "%i", 0             	;Read int
 stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
+Label0:        dq        1.0                 
+Label1:        db        " ", 0              
+Label2:        db        " ", 0              
                                              
                section   .bss                

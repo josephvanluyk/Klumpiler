@@ -168,6 +168,7 @@ string const NONE = "";
 int const LOCAL = 0;
 int const GLOBAL = 1;
 int const CONST = 2;
+int const CALLBY = 3;
 const int FOUND = 1;
 const int DOES_NOT_MATCH = 0;
 const int FAILED = -1;
@@ -907,7 +908,9 @@ int read_statement(){
 					addLine("", "mov", "eax, ebp", "");
 					addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
 					addLine("", "push", "eax", "");
-				}
+				}else if(idToWrite.scope == CALLBY){
+                    addLine("", "push", "dword " + getOffsetString(idToWrite.offset), "Push address of callby variable to stack");
+                }
 				if(idToWrite.type == INT){
 					addLine("", "push", "intFrmtIn", "");
 				}else if(idToWrite.type == REAL){
@@ -1654,16 +1657,23 @@ int factor(){
 					if(found.scope == GLOBAL || found.scope == CONST){
 						addLine("", "push", "dword [" + found.aName + " + 4]", "Push global real to stack in two parts");
 						addLine("", "push", "dword [" + found.aName + "]", "");
-					}else{
+					}else if(found.scope == LOCAL){
 						addLine("", "push", "dword " + getOffsetString(found.offset - 4), "Push local real to stack in two parts");
 						addLine("", "push", "dword " + getOffsetString(found.offset), "");
-					}
+					}else if(found.scope == CALLBY){
+                        addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esp");
+                        addLine("", "push", "dword [esi + 4]", "Push first half of real");
+                        addLine("", "push", "dword [esi]", "");
+                    }
 				}else{
 					if(found.scope == GLOBAL || found.scope == CONST){
 						addLine("", "push", "dword [" + found.aName + "]", "Push global var to stack");
-					}else{
+					}else if(found.scope == LOCAL){
 						addLine("", "push", "dword " + getOffsetString(found.offset), "Push local var to stack");
-					}
+					}else if(found.scope == CALLBY){
+                        addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esi");
+                        addLine("", "push", "dword [esi]", "Push value at address to stack");
+                    }
 				}
 			}
 			return FOUND;
@@ -1956,11 +1966,24 @@ void convertIntToReal(){
 
 void processArgs(Procedure proc){
 	vector<Argument> args = proc.args;
-
 	for(int i = 0; i < args.size(); i++){
-
 		Argument arg = args.at(i);
 		if(arg.callBy){
+            string id = tok.lexeme;
+            if(match_token(tok.tokenName, "Identifier")){
+                Variable var = getVariable(id);
+                if(var.type == arg.type){
+                    loadAddr(var);
+                }else{
+                    cout << "Actual arg doesn't match formal arg" << endl;
+                    error();
+                }
+                if(!match_token(tok.lexeme, ",")){
+					if(i != args.size() - 1){
+						error();
+					}
+				}
+            }
 		}else{
 			if(expression() == FOUND){
 				if(typeStack.top() == arg.type){
@@ -1990,11 +2013,13 @@ void loadArgsToLocalVariables(Procedure proc){
 		Argument arg = args.at(i);
 		if(!arg.callBy){
 			var.scope = LOCAL;
-		}
+		}else{
+            var.scope = CALLBY;
+        }
 		var.kName = arg.name;
 		var.offset = offset;
 		var.type = arg.type;
-		if(arg.type == REAL){
+		if(arg.type == REAL && !arg.callBy){
 			offset = offset - 8;
 		}else{
 			offset = offset - 4;
@@ -2008,7 +2033,7 @@ void loadArgsToLocalVariables(Procedure proc){
 void removeArgsFromStack(Procedure proc){
 	int size = 0;
 	for(int i = 0; i < proc.args.size(); i++){
-		if(proc.args.at(i).type == REAL){
+		if(proc.args.at(i).type == REAL && !proc.args.at(i).callBy){
 			size += 8;
 		}else{
 			size += 4;
@@ -2024,5 +2049,7 @@ void loadAddr(Variable var){
     }else if(var.scope == GLOBAL){
         addLine("", "lea", "eax, [" + var.aName + "]", "Load address into eax");
         addLine("", "push", "eax", "");
+    }else if(var.scope == CALLBY){
+        addLine("", "push", "dword " + getOffsetString(var.offset), "Load callBy address onto stack");
     }
 }

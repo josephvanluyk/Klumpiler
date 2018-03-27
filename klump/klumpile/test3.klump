@@ -3,27 +3,24 @@ const
 type
 dcl
 proc
-
+testone(var x : real, var y : int, z : int);
 
 procedure main;
 dcl
-	i : int;
+	i : real;
     j : int;
     k : int;
 begin
-    for i := 0 to 10
-        do;
-            writeln(i);
-        end;
-    {k := 1;}
-    for j := 10 downto 1
-        do;
-            if(j % 2 = 0) then
-                next;
-            writeln(j);
-        end;
+    i := 1.0;
+    j := 1;
+    k := 1;
+    call testone(i, j, k);
+    writeln(i, " ", j, " ",  k);
+end
 
-
-
+procedure testone;
+dcl
+begin
+    readln(x);
 end
 .
