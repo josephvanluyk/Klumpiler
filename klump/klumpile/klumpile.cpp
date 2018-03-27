@@ -1200,6 +1200,7 @@ int case_statement(){
 		if(match_token(tok.lexeme, "(")){
 			if(expression() == FOUND){
 				if(match_token(tok.lexeme, ")")){
+                    addLine("", "pop", "eax", "Pop case expression to eax");
 					if(case_list() == FOUND){
 						return FOUND;
 					}
@@ -1212,37 +1213,44 @@ int case_statement(){
 }
 
 int case_list(){
-	bool pass = false;
-	bool firstpass = false;
-	while(unary() == FOUND){
-		firstpass = true;
-		if(match_token(tok.tokenName, "number")){
-			if(match_token(tok.lexeme, ":")){
-				if(statement() == FOUND){
-					pass = true;
-				}
-			}
-		}
-		if(pass){
-			pass = !pass;
-		}else{
-			error();
-		}
+    string done = generateLabel();
+	string un = tok.lexeme;
+    unary();
+    string type = tok.tokenName;
+    while(_const() == FOUND){
+        string nextLabel = generateLabel();
+        if(typeStack.top() != INT){
+            error();
+        }
+        typeStack.pop();
+        addLine("", "pop", "ebx", "Remove case instance value from stack");
+        if(un == "-"){
+            addLine("", "neg", "ebx", "Add unary negative");
+        }
 
-	}
+        addLine("", "cmp", "eax, ebx", "Compare case expression to instance");
+        addLine("", "jne", nextLabel, "");
+        if(!match_token(tok.lexeme, ":")){
+            error();
+        }
+        if(statement() != FOUND){
+            error();
+        }
+        addLine("", "jmp", done, "Jump to end of case_statement");
+        addLine(nextLabel, "", "", "Try next case instance");
+    }
 
-	if(match_token(tok.lexeme, "default")){
-		if(match_token(tok.lexeme, ":")){
-			if(statement() == FOUND){
-				return FOUND;
-			}
-		}
-		error();
-	}
-	if(firstpass){
-		error();
-	}
-	return DOES_NOT_MATCH;
+    if(!match_token(tok.lexeme, "default")){
+        error();
+    }
+    if(!match_token(tok.lexeme, ":")){
+        error();
+    }
+    if(statement() != FOUND){
+        error();
+    }
+    addLine(done, "", "", "End of case statement");
+	return FOUND;
 
 }
 

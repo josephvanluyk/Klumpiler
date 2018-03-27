@@ -1,0 +1,26 @@
+procedure main;
+
+  dcl
+    classrank   : int;
+
+begin { main }
+
+  writeln ('enter class status:');
+  writeln ('  1 = freshman');
+  writeln ('  2 = sophomore');
+  writeln ('  3 = junior');
+  writeln ('  4 = senior');
+  write   ('     enter status: ');
+  readln  (classrank);
+  writeln("");
+
+  write   ('student status: ');
+  case (classrank)
+    1 : writeln ('freshman');
+    2 : writeln ('sophomore');
+    3 : writeln ('junior');
+    4 : writeln ('senior');
+    default : writeln ('do not know');
+
+end   { main }
+.
