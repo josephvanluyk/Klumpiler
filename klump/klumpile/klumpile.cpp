@@ -1233,7 +1233,7 @@ int assign_statement(){
                     }else{
                         offsetLoc = 8;
                     }
-                    addLine("", "mov", " ebx, " + appendString("[esp + ", offsetLoc) + "]", "Move offset from array head to eax");
+                    addLine("", "mov", "ebx, " + appendString("[esp + ", offsetLoc) + "]", "Move offset from array head to eax");
                     addLine("", "pop", "eax", "Pop array location");
                     addLine("", "lea", "eax, [eax + " + appendString("", arr.storageUnit) + "*ebx]", "Calculate offset");  //lea eax, [eax + storageUnite*ebx];
                     addLine("", "push", "eax", "Push new address to stack");
@@ -1909,6 +1909,7 @@ int factor(){
             if(expression() != FOUND){
                 error();
             }
+            typeStack.pop();
             if(!match_token(tok.lexeme, "]")){
                 error();
             }

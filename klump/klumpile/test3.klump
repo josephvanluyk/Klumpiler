@@ -1,32 +1,15 @@
 global
 const
 type
-    myArr : array [8] of real;
+    myArr : array [2] of real;
 dcl
     test : myArr;
-{proc
-factorial(n : int, var i : int) : int;}
-
 
 procedure main();
 dcl
-    n : int;
-    x : int;
     asdf : myArr;
 begin
-    readln(asdf[0], asdf[1], asdf[2]);
-    writeln(asdf[0], asdf[1], asdf[2]);
-    readln(n);
-    writeln("n! = ", factorial(n, x));
-    writeln("x = ", x);
-end
-
-procedure factorial(n : int, var i : int) : int;
-dcl
-begin
-    i := i + 1;
-    if(n = 0) then
-        return 1;
-    return n*factorial(n-1, i);
-end
-.
+    test[0] := 1.0;
+    test[1] := 2.0;
+    writeln(test[0] + test[1]);
+end.
