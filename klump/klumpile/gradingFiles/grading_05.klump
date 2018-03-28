@@ -1,4 +1,4 @@
-procedure main;
+procedure main();
 
   dcl
     classrank   : int;

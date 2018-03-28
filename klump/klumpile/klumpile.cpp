@@ -50,6 +50,14 @@ struct Procedure{
 	string exitLabel;
 };
 
+
+struct arrayType{
+    string name;
+    string type;
+    int capacity;
+    int storageUnit;
+    int memReq;
+};
 /*
 *
 *	END STRUCT DEFINITIONS
@@ -144,6 +152,7 @@ void processArgs(Procedure proc);
 void loadArgsToLocalVariables(Procedure proc);
 void removeArgsFromStack(Procedure proc);
 string findTypeName();
+arrayType getArrType(string name);
 /*
 *
 *	END FUNCTION DECLARATIONS
@@ -186,6 +195,7 @@ stack<string> breakStack;
 vector<Literal> literals;
 vector<GoToLabel> gotos;
 vector<Procedure> procs;
+vector<arrayType> arrays;
 
 /*
 *
@@ -232,7 +242,7 @@ void setupOptions(int argc, char** argv){
     outFile.open(outFileName.c_str());
 }
 
-void loadProcVector(int argc, char** argv){
+void loadProcVector(){
     sym = nextSym();
     tok = getNext();
     while(!inFile.eof()){
@@ -301,12 +311,71 @@ void loadProcVector(int argc, char** argv){
 
     }
 }
+void loadArrTypes(){
+    sym = nextSym();
+    tok = getNext();
+    while(tok.lexeme != "type"){
+        if(inFile.eof()){
+            return;
+        }
+        tok = getNext();
+    }
+    tok = getNext();
+    string arrName = tok.lexeme;
+    while(match_token(tok.tokenName, "Identifier")){
+        arrayType arr;
+        arr.name = arrName;
+        if(!match_token(tok.lexeme, ":")){
+            error();
+        }
+        if(!match_token(tok.lexeme, "array")){
+            error();
+        }
+        if(!match_token(tok.lexeme, "[")){
+            error();
+        }
+        string num = tok.lexeme;
+        if(match_token(tok.tokenName, "number")){
+            arr.capacity = atoi(num.c_str());
+        }
+        if(!match_token(tok.lexeme, "]")){
+            error();
+        }
+        if(!match_token(tok.lexeme, "of")){
+            error();
+        }
+        string type = findTypeName();
+        arr.type = type;
+        if(type == REAL){
+            arr.storageUnit = 8;
+        }else{
+            arr.storageUnit = 4;
+        }
+        arr.memReq = arr.capacity*arr.storageUnit;
+        arrays.push_back(arr);
+        if(!match_token(tok.lexeme, ";")){
+            error();
+        }
+
+
+
+
+
+        arrName = tok.lexeme;
+    }
+
+
+
+}
+
 
 
 int main(int argc, char** argv){
     setupInput(argc, argv);
     setupOptions(argc, argv);
-    loadProcVector(argc, argv);
+    loadArrTypes();
+    resetFileIO();
+    loadProcVector();
     resetFileIO();
 	sym = nextSym();
 	tok = getNext();
@@ -541,6 +610,8 @@ int dcl_list(int scope){
 					id.offset = storage + 4;
 				}else{
 					id.type = t2.lexeme;
+                    arrayType arr = getArrType(t2.lexeme);
+                    id.offset = storage + arr.memReq;
 				}
 				storage = id.offset;
 
@@ -1975,9 +2046,13 @@ void printOutro(){
 		string size;
 		if(id.type == REAL){
 			size = "8";
-		}else{
-			size = "4";
 		}
+        else if(id.type == BOOL || id.type == INT || id.type == STRING){
+			size = "4";
+		}else{
+            arrayType arr = getArrType(id.type);
+            size = appendString("", arr.memReq);
+        }
 		addLine(id.aName, "resb(" + size + ")", "", "");
 	};
 
@@ -2193,4 +2268,16 @@ string findTypeName(){
     }
 
     return NONE;
+}
+
+arrayType getArrType(string name){
+    for(int i = 0; i < arrays.size(); i++){
+        if(arrays.at(i).name == name){
+            return arrays.at(i);
+        }
+    }
+    cerr << "Unknown type " << name << endl;
+    error();
+    arrayType arr;
+    return arr;
 }

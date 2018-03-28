@@ -8,7 +8,7 @@ global
     prompt1 : 'enter an integer number: ';
     prompt2 : 'enter a  real    number: ';
 
-procedure main;
+procedure main();
 
   dcl
     ix      : int;

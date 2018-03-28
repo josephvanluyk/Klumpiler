@@ -5,12 +5,9 @@ global
     prompt2 : 'enter n: ';
     prompt3 : 'enter three real numbers: ';
 
-  proc
-    cube      (x : real                  ) : real;
-    factorial (n : int                   ) : int;
-    sort      (a : real,b : real,c : real);
 
-procedure main;
+
+procedure main();
 
   dcl
     x : real;
@@ -40,7 +37,7 @@ begin { main }
 
 end   { main }
 
-procedure cube;
+procedure cube(x : real) : real;
 
 begin { cube }
 
@@ -48,7 +45,7 @@ begin { cube }
 
 end   { cube }
 
-procedure factorial;
+procedure factorial(n : int) : int;
 
 begin { factorial }
 
@@ -58,7 +55,7 @@ begin { factorial }
 
 end   { factorial }
 
-procedure sort;
+procedure sort(a : real, b : real, c : real);
 
   dcl
     temp : real;

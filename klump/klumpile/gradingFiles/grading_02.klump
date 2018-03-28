@@ -3,7 +3,7 @@ global
   const
     prompt  : 'enter a positive integer (0 terminates): ';
 
-procedure main;
+procedure main();
 
   dcl
     value   : int;

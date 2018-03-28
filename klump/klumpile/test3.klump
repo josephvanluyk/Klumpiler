@@ -1,7 +1,9 @@
 global
 const
 type
+    myArr : array [8] of int;
 dcl
+    test : myArr;
 {proc
 factorial(n : int, var i : int) : int;}
 
@@ -10,6 +12,7 @@ procedure main();
 dcl
     n : int;
     x : int;
+    asdf : myArr;
 begin
     x := 0;
     write("Enter the value of n: ");
