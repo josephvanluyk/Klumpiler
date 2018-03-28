@@ -281,6 +281,9 @@ void loadProcVector(){
             }
             string type = findTypeName();
             arg.type = type;
+            if(arg.type != REAL && arg.type != BOOL && arg.type != INT && arg.type != STRING){
+                arg.callBy = true;
+            }
             args.push_back(arg);
             if(!match_token(tok.lexeme, ",")){
                 break;
