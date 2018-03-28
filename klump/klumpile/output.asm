@@ -7,76 +7,76 @@ main:
 Entry_main:                                  
                push      ebp                 	;Store base pointer
                mov       ebp, esp            	;Create new base pointer
-               sub       esp, 40             
+               sub       esp, 72             
                push      0                   	;Push int literal to stack
-               lea       eax, [ebp - 8]      	;Load address into eax
+               lea       eax, [ebp - 72]     	;Load address into eax
                push      eax                 
-               pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-               push      0                   	;Push int literal to stack
+               pop       eax                 	;Pop array head address
+               pop       ebx                 	;Pop offset calculation
+               lea       eax, [eax + 8*ebx]  	;Perform offset calculation
+               push      eax                 	;Push address to array variable
+               push      realFrmtIn          
+               call      scanf               	;Retrieve input from user
+               add       esp, 8              	;Remove arguments from stack
                push      1                   	;Push int literal to stack
-               lea       eax, [ebp - 40]     	;Load address into eax
+               lea       eax, [ebp - 72]     	;Load address into eax
                push      eax                 
-               mov        ebx, [esp + 8]     	;Move offset from array head to eax
-               pop       eax                 	;Pop array location
-               lea       eax, [eax + 4*ebx]  	;Calculate offset
-               push      eax                 	;Push new address to stack
-               pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-               add       esp, 4              	;Remove offset from stack
-               push      0                   	;Push int literal to stack
-               lea       eax, [ebp - 40]     	;Load address into eax
-               push      eax                 
-               pop       ebx                 
-               pop       eax                 
-               lea       esi, [ebx + eax*4]  	;Calculate offset
-               push      dword [esi]         	;Push from array to stack
-               push      intFrmt             	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      0                   	;Push int literal to stack
+               pop       eax                 	;Pop array head address
+               pop       ebx                 	;Pop offset calculation
+               lea       eax, [eax + 8*ebx]  	;Perform offset calculation
+               push      eax                 	;Push address to array variable
+               push      realFrmtIn          
+               call      scanf               	;Retrieve input from user
+               add       esp, 8              	;Remove arguments from stack
                push      2                   	;Push int literal to stack
-               lea       eax, [ebp - 40]     	;Load address into eax
+               lea       eax, [ebp - 72]     	;Load address into eax
                push      eax                 
-               mov        ebx, [esp + 8]     	;Move offset from array head to eax
-               pop       eax                 	;Pop array location
-               lea       eax, [eax + 4*ebx]  	;Calculate offset
-               push      eax                 	;Push new address to stack
-               pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-               add       esp, 4              	;Remove offset from stack
+               pop       eax                 	;Pop array head address
+               pop       ebx                 	;Pop offset calculation
+               lea       eax, [eax + 8*ebx]  	;Perform offset calculation
+               push      eax                 	;Push address to array variable
+               push      realFrmtIn          
+               call      scanf               	;Retrieve input from user
+               add       esp, 8              	;Remove arguments from stack
+Label0:        call      getchar             	;Remove characters until \n
+               cmp       eax, 0xA            
+               jne       Label0              	;If the character isn't \n, continue removing
                push      0                   	;Push int literal to stack
-               lea       eax, [ebp - 40]     	;Load address into eax
+               lea       eax, [ebp - 72]     	;Load address into eax
                push      eax                 
                pop       ebx                 
                pop       eax                 
-               lea       esi, [ebx + eax*4]  	;Calculate offset
+               lea       esi, [ebx + eax*8]  	;Calculate offset
+               push      dword [esi + 4]     	;Push real from array to stack in two parts
                push      dword [esi]         	;Push from array to stack
-               push      intFrmt             	;Push format string for printf
+               push      realFrmt            	;Push format string for printf
                call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      dword [ebp - 8]     	;Push local var to stack
-               push      intFrmt             	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               push      NewLine             	;Push newline to stack for printf
-               call      printf              
-               add       esp, 4              	;Clean up stack after printf
-               push      0                   	;Push int literal to stack
-               lea       eax, [ebp - 8]      	;Load address into eax
+               add       esp, 12             
+               push      1                   	;Push int literal to stack
+               lea       eax, [ebp - 72]     	;Load address into eax
                push      eax                 
-               pop       esi                 	;Pop address to esi
-               pop       dword [esi]         	;Pop expression to address in esi
-               push      Label0              	;Push address of string literal to stack
-               push      stringFrmt          	;Push format string for printf
+               pop       ebx                 
+               pop       eax                 
+               lea       esi, [ebx + eax*8]  	;Calculate offset
+               push      dword [esi + 4]     	;Push real from array to stack in two parts
+               push      dword [esi]         	;Push from array to stack
+               push      realFrmt            	;Push format string for printf
                call      printf              
-               add       esp, 8              
+               add       esp, 12             
+               push      2                   	;Push int literal to stack
+               lea       eax, [ebp - 72]     	;Load address into eax
+               push      eax                 
+               pop       ebx                 
+               pop       eax                 
+               lea       esi, [ebx + eax*8]  	;Calculate offset
+               push      dword [esi + 4]     	;Push real from array to stack in two parts
+               push      dword [esi]         	;Push from array to stack
+               push      realFrmt            	;Push format string for printf
+               call      printf              
+               add       esp, 12             
+               push      NewLine             	;Push newline to stack for printf
+               call      printf              
+               add       esp, 4              	;Clean up stack after printf
                mov       eax, ebp            
                sub       eax, 4              	;Subtract offset from ebp to find address of input variable
                push      eax                 
@@ -183,9 +183,8 @@ intFrmtIn:     db        "%i", 0             	;Read int
 stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
-Label0:        db        "Enter the value of n: ", 0
 Label2:        db        "n! = ", 0          
 Label3:        db        "x = ", 0           
                                              
                section   .bss                
-_test_:        resb(32)                      
+_test_:        resb(64)                      

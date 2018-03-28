@@ -1,7 +1,7 @@
 global
 const
 type
-    myArr : array [8] of int;
+    myArr : array [8] of real;
 dcl
     test : myArr;
 {proc
@@ -14,14 +14,8 @@ dcl
     x : int;
     asdf : myArr;
 begin
-    x := 0;
-    asdf[0] := 1;
-    writeln(asdf[0]);
-    asdf[0] := 2;
-    writeln(asdf[0]);
-    writeln(x);
-    x := 0;
-    write("Enter the value of n: ");
+    readln(asdf[0], asdf[1], asdf[2]);
+    writeln(asdf[0], asdf[1], asdf[2]);
     readln(n);
     writeln("n! = ", factorial(n, x));
     writeln("x = ", x);

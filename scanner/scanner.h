@@ -192,6 +192,7 @@ void setInFile(std::string fileName){
 }
 
 void resetFileIO(){
+    n = 1;
     inFile.clear();
     inFile.seekg(0, std::ios::beg);
 }

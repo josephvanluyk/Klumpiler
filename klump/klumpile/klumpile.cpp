@@ -1089,26 +1089,51 @@ int read_statement(){
 			while(match_token(tok.tokenName, "Identifier")){
     			Variable idToWrite;
     			idToWrite = getVariable(id);
-    			if(idToWrite.scope == GLOBAL){
-    				addLine("", "push", idToWrite.aName, "Push address to input variable");
-    			}else if(idToWrite.scope == LOCAL){
-    				addLine("", "mov", "eax, ebp", "");
-    				addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
-    				addLine("", "push", "eax", "");
-    			}else if(idToWrite.scope == CALLBY){
-                    addLine("", "push", "dword " + getOffsetString(idToWrite.offset), "Push address of callby variable to stack");
-                }
-    			if(idToWrite.type == INT){
-    				addLine("", "push", "intFrmtIn", "");
-    			}else if(idToWrite.type == REAL){
-    				addLine("", "push", "realFrmtIn", "");
-    			}else if(idToWrite.type == STRING){
-    				addLine("", "push", "stringFrmtIn", "");
-    			}else{
-    				cerr << "Cannot input type" << idToWrite.type << endl;
-    				error();
-    			}
+                string type;
+                if(!match_token(tok.lexeme, "[")){
+                    //Dealing with regular identifier
+                    if(idToWrite.scope == GLOBAL){
+        				addLine("", "push", idToWrite.aName, "Push address to input variable");
+        			}else if(idToWrite.scope == LOCAL){
+        				addLine("", "mov", "eax, ebp", "");
+        				addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
+        				addLine("", "push", "eax", "");
+        			}else if(idToWrite.scope == CALLBY){
+                        addLine("", "push", "dword " + getOffsetString(idToWrite.offset), "Push address of callby variable to stack");
+                    }
+                    type = idToWrite.type;
+                }else{
+                    //Dealing with array
+                    if(expression() != FOUND){
 
+                        error();
+                    }
+                    if(typeStack.top() != INT){
+                        error();
+                    }else{
+                        typeStack.pop();
+                    }
+                    arrayType arr = getArrType(idToWrite.type);
+                    loadAddr(idToWrite);
+                    addLine("", "pop", "eax", "Pop array head address");
+                    addLine("", "pop", "ebx", "Pop offset calculation");
+                    addLine("", "lea", "eax, [eax + " + appendString("", arr.storageUnit) + "*ebx]", "Perform offset calculation");
+                    addLine("", "push", "eax", "Push address to array variable");
+                    if(!match_token(tok.lexeme, "]")){
+                        error();
+                    }
+                    type = arr.type;
+                }
+                if(type == INT){
+                    addLine("", "push", "intFrmtIn", "");
+                }else if(type == REAL){
+                    addLine("", "push", "realFrmtIn", "");
+                }else if(type == STRING){
+                    addLine("", "push", "stringFrmtIn", "");
+                }else{
+                    cerr << "Cannot input type " << idToWrite.type << endl;
+                    error();
+                }
 				addLine("", "call", "scanf", "Retrieve input from user");
 				addLine("", "add", "esp, 8", "Remove arguments from stack");
 
