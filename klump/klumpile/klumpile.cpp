@@ -1087,27 +1087,27 @@ int read_statement(){
 		if(match_token(tok.lexeme, "(")){
 			string id = tok.lexeme;
 			while(match_token(tok.tokenName, "Identifier")){
-				Variable idToWrite;
-				idToWrite = getVariable(id);
-				if(idToWrite.scope == GLOBAL){
-					addLine("", "push", idToWrite.aName, "Push address to input variable");
-				}else if(idToWrite.scope == LOCAL){
-					addLine("", "mov", "eax, ebp", "");
-					addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
-					addLine("", "push", "eax", "");
-				}else if(idToWrite.scope == CALLBY){
+    			Variable idToWrite;
+    			idToWrite = getVariable(id);
+    			if(idToWrite.scope == GLOBAL){
+    				addLine("", "push", idToWrite.aName, "Push address to input variable");
+    			}else if(idToWrite.scope == LOCAL){
+    				addLine("", "mov", "eax, ebp", "");
+    				addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
+    				addLine("", "push", "eax", "");
+    			}else if(idToWrite.scope == CALLBY){
                     addLine("", "push", "dword " + getOffsetString(idToWrite.offset), "Push address of callby variable to stack");
                 }
-				if(idToWrite.type == INT){
-					addLine("", "push", "intFrmtIn", "");
-				}else if(idToWrite.type == REAL){
-					addLine("", "push", "realFrmtIn", "");
-				}else if(idToWrite.type == STRING){
-					addLine("", "push", "stringFrmtIn", "");
-				}else{
-					cerr << "Cannot input type" << idToWrite.type << endl;
-					error();
-				}
+    			if(idToWrite.type == INT){
+    				addLine("", "push", "intFrmtIn", "");
+    			}else if(idToWrite.type == REAL){
+    				addLine("", "push", "realFrmtIn", "");
+    			}else if(idToWrite.type == STRING){
+    				addLine("", "push", "stringFrmtIn", "");
+    			}else{
+    				cerr << "Cannot input type" << idToWrite.type << endl;
+    				error();
+    			}
 
 				addLine("", "call", "scanf", "Retrieve input from user");
 				addLine("", "add", "esp, 8", "Remove arguments from stack");
@@ -1180,16 +1180,49 @@ int assign_statement(){
 	if(match_token(tok.tokenName, "Identifier")){
 		/* Have we seen this identifier declared? */
 		Variable id  = getVariable(t.lexeme);
-		if(qualifier() == FOUND){								//Are we dealing with an Array/Record?
-			if(match_token(tok.lexeme, ":=")){
-				if(expression() == FOUND){						//Find an expression and push it to the stack
-					string typeTwo = typeStack.top();
-					typeStack.pop();
-                    loadAddr(id);
-					addAssign(typeTwo, id.type);
-					if(match_token(tok.lexeme, ";")){
-						return FOUND;
-					}
+        bool dealingWithArr = false;
+		if(match_token(tok.lexeme, "[")){
+            dealingWithArr = true;
+            if(expression() != FOUND){
+                error();
+            }
+            if(typeStack.top() != INT){
+                cerr << "Invalid type " << typeStack.top() << endl;
+            }
+            if(!match_token(tok.lexeme, "]")){
+                error();
+            }
+
+        }
+		if(match_token(tok.lexeme, ":=")){
+			if(expression() == FOUND){						//Find an expression and push it to the stack
+				string typeTwo = typeStack.top();
+				typeStack.pop();
+                string typeOne;
+                loadAddr(id);
+                if(dealingWithArr){
+                    arrayType arr = getArrType(id.type);
+                    int offsetLoc;
+                    if(typeTwo == REAL){
+                        offsetLoc = 12;
+                    }else{
+                        offsetLoc = 8;
+                    }
+                    addLine("", "mov", " ebx, " + appendString("[esp + ", offsetLoc) + "]", "Move offset from array head to eax");
+                    addLine("", "pop", "eax", "Pop array location");
+                    addLine("", "lea", "eax, [eax + " + appendString("", arr.storageUnit) + "*ebx]", "Calculate offset");  //lea eax, [eax + storageUnite*ebx];
+                    addLine("", "push", "eax", "Push new address to stack");
+                    typeOne = arr.type;
+                }else{
+                    typeOne = id.type;
+                }
+                addAssign(typeTwo, typeOne);
+
+                if(dealingWithArr){
+                    addLine("", "add", "esp, 4", "Remove offset from stack");
+                }
+				if(match_token(tok.lexeme, ";")){
+					return FOUND;
 				}
 			}
 		}
@@ -1844,35 +1877,56 @@ int factor(){
 				return FOUND;
 			}
 			error();
-		}else if(qualifier() == FOUND){
-			if(next != "." && next != "["){
-				Variable found = getVariable(id);
-				typeStack.push(found.type);
-				if(found.type == REAL){
-					if(found.scope == GLOBAL || found.scope == CONST){
-						addLine("", "push", "dword [" + found.aName + " + 4]", "Push global real to stack in two parts");
-						addLine("", "push", "dword [" + found.aName + "]", "");
-					}else if(found.scope == LOCAL){
-						addLine("", "push", "dword " + getOffsetString(found.offset - 4), "Push local real to stack in two parts");
-						addLine("", "push", "dword " + getOffsetString(found.offset), "");
-					}else if(found.scope == CALLBY){
+		}else if(match_token(tok.lexeme, "[")){           //Look for Qualifiers
+            //We're looking at a qualifier.
+            Variable var = getVariable(id);
+            arrayType arr = getArrType(var.type);
+            if(expression() != FOUND){
+                error();
+            }
+            if(!match_token(tok.lexeme, "]")){
+                error();
+            }
+            loadAddr(var);
+            addLine("", "pop", "ebx", "");
+            addLine("", "pop", "eax", "");
+            addLine("", "lea", "esi, " + appendString("[ebx + eax*", arr.storageUnit) + "]", "Calculate offset");
+            if(arr.type == REAL){
+                addLine("", "push", "dword [esi + 4]", "Push real from array to stack in two parts");
+            }
+            addLine("", "push", "dword [esi]", "Push from array to stack");
+            typeStack.push(arr.type);
+            return FOUND;
+
+		}else{
+            if(next != "." && next != "["){
+                Variable found = getVariable(id);
+                typeStack.push(found.type);
+                if(found.type == REAL){
+                    if(found.scope == GLOBAL || found.scope == CONST){
+                        addLine("", "push", "dword [" + found.aName + " + 4]", "Push global real to stack in two parts");
+                        addLine("", "push", "dword [" + found.aName + "]", "");
+                    }else if(found.scope == LOCAL){
+                        addLine("", "push", "dword " + getOffsetString(found.offset - 4), "Push local real to stack in two parts");
+                        addLine("", "push", "dword " + getOffsetString(found.offset), "");
+                    }else if(found.scope == CALLBY){
                         addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esp");
                         addLine("", "push", "dword [esi + 4]", "Push first half of real");
                         addLine("", "push", "dword [esi]", "");
                     }
-				}else{
-					if(found.scope == GLOBAL || found.scope == CONST){
-						addLine("", "push", "dword [" + found.aName + "]", "Push global var to stack");
-					}else if(found.scope == LOCAL){
-						addLine("", "push", "dword " + getOffsetString(found.offset), "Push local var to stack");
-					}else if(found.scope == CALLBY){
+                }else{
+                    if(found.scope == GLOBAL || found.scope == CONST){
+                        addLine("", "push", "dword [" + found.aName + "]", "Push global var to stack");
+                    }else if(found.scope == LOCAL){
+                        addLine("", "push", "dword " + getOffsetString(found.offset), "Push local var to stack");
+                    }else if(found.scope == CALLBY){
                         addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esi");
                         addLine("", "push", "dword [esi]", "Push value at address to stack");
                     }
-				}
-			}
-			return FOUND;
-		}
+                }
+            }
+            return FOUND;
+        }
 
 
 	}
