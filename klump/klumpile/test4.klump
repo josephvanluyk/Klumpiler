@@ -4,11 +4,9 @@ const
 type
 dcl
 	ret : int;
-proc
-isPrime(n : int) : bool;
 
 
-procedure main;
+procedure main();
 dcl
 	n : int;
 begin
@@ -26,7 +24,7 @@ begin
 
 end
 
-procedure isPrime;
+procedure isPrime(n : int) : bool;
 dcl
     i : int;
 begin

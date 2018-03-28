@@ -6,9 +6,7 @@ dcl
 	sum : real;
 	n : int;
 	term : real;
-
-proc
-procedure main;
+procedure main();
 dcl
 
 	i : int;

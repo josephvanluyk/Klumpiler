@@ -143,6 +143,7 @@ void convertIntToReal();
 void processArgs(Procedure proc);
 void loadArgsToLocalVariables(Procedure proc);
 void removeArgsFromStack(Procedure proc);
+string findTypeName();
 /*
 *
 *	END FUNCTION DECLARATIONS
@@ -230,9 +231,83 @@ void setupOptions(int argc, char** argv){
     }
     outFile.open(outFileName.c_str());
 }
+
+void loadProcVector(int argc, char** argv){
+    sym = nextSym();
+    tok = getNext();
+    while(!inFile.eof()){
+        bool end = false;
+        while(tok.lexeme != "procedure"){
+            if(inFile.eof()){
+                end = true;
+                break;
+            }
+            tok = getNext();
+        }
+        if(end){
+            break;
+        }
+        tok = getNext();
+        string procName = tok.lexeme;
+        Procedure proc;
+        vector<Argument> args;
+        proc.name = procName;
+        tok = getNext();
+        if(!match_token(tok.lexeme, "(")){
+            error();
+        }
+        bool callBy = match_token(tok.lexeme, "var");
+        Argument arg;
+        string argName = tok.lexeme;
+        while(match_token(tok.tokenName, "Identifier")){
+            arg.name = argName;
+            if(callBy){
+                arg.callBy = true;
+            }else{
+                arg.callBy = false;
+            }
+            if(!match_token(tok.lexeme, ":")){
+                error();
+            }
+            string type = findTypeName();
+            arg.type = type;
+            args.push_back(arg);
+            if(!match_token(tok.lexeme, ",")){
+                break;
+            }
+
+
+            callBy = match_token(tok.lexeme, "var");
+            argName = tok.lexeme;
+        }
+        if(!match_token(tok.lexeme, ")")){
+            error();
+        }
+        if(!match_token(tok.lexeme, ":")){
+            if(match_token(tok.lexeme, ";")){
+                proc.returnType = NONE;
+
+            }else{
+                error();
+            }
+        }else{
+            string type = findTypeName();
+            proc.returnType = type;
+        }
+        proc.args = args;
+        proc.entryLabel = "Entry_" + proc.name;
+        proc.exitLabel = "Exit_" + proc.name;
+        procs.push_back(proc);
+
+    }
+}
+
+
 int main(int argc, char** argv){
     setupInput(argc, argv);
     setupOptions(argc, argv);
+    loadProcVector(argc, argv);
+    resetFileIO();
 	sym = nextSym();
 	tok = getNext();
 	Procedure proc;
@@ -261,7 +336,7 @@ int klump_program(){
 //<global_definitions> -> GLOBAL <const_definitions> <type_definitons> <dcl_definitions> <proc_declarations> | ""
 int global_definitions(){
 	if(match_token(tok.lexeme, "global")){
-		if(const_definitions() == FOUND && type_definitions() == FOUND && dcl_definitions(GLOBAL) == FOUND && proc_declarations() == FOUND){
+		if(const_definitions() == FOUND && type_definitions() == FOUND && dcl_definitions(GLOBAL) == FOUND /*&& proc_declarations() == FOUND*/){
 			return FOUND;
 		}
 		error();
@@ -771,6 +846,26 @@ int proc_head(){
 			currentProc = name;
 			Procedure proc = findProc(currentProc);
 			loadArgsToLocalVariables(proc);
+            if(!match_token(tok.lexeme, "(")){
+                error();
+            }
+            match_token(tok.lexeme, "var");
+            while(match_token(tok.tokenName, "Identifier")){
+                if(!match_token(tok.lexeme, ":")){
+                    error();
+                }
+                findTypeName();
+                if(!match_token(tok.lexeme, ",")){
+                    break;
+                }
+                match_token(tok.lexeme, "var");
+            }
+            if(!match_token(tok.lexeme, ")")){
+                error();
+            }
+            if(match_token(tok.lexeme, ":")){
+                findTypeName();
+            }
 			if(match_token(tok.lexeme, ";")){
 				return FOUND;
 			}
@@ -2082,4 +2177,20 @@ void loadAddr(Variable var){
     }else if(var.scope == CALLBY){
         addLine("", "push", "dword " + getOffsetString(var.offset), "Load callBy address onto stack");
     }
+}
+
+
+string findTypeName(){
+    string type = tok.lexeme;
+    if(match_token(tok.lexeme, "int")){
+        return INT;
+    }else if(match_token(tok.lexeme, "real")){
+        return REAL;
+    }else if(match_token(tok.lexeme, "bool")){
+        return BOOL;
+    }else if(match_token(tok.tokenName, "Identifier")){
+        return type;
+    }
+
+    return NONE;
 }

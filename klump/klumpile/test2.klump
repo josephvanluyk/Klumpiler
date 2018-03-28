@@ -4,9 +4,9 @@ type
 dcl
 	n : int;
 	fact : int;
-proc
-factorial();
-procedure main;
+
+
+procedure main();
 dcl
 begin
 	write("Enter the value of n: ");
@@ -17,7 +17,7 @@ begin
 	writeln(fact);
 end
 
-procedure factorial;
+procedure factorial();
 dcl
 	m : int;
 begin

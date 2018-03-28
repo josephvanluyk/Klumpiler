@@ -2,11 +2,11 @@ global
 const
 type
 dcl
-proc
-factorial(n : int, var i : int) : int;
+{proc
+factorial(n : int, var i : int) : int;}
 
 
-procedure main;
+procedure main();
 dcl
     n : int;
     x : int;
@@ -18,7 +18,7 @@ begin
     writeln("x = ", x);
 end
 
-procedure factorial;
+procedure factorial(n : int, var i : int) : int;
 dcl
 begin
     i := i + 1;

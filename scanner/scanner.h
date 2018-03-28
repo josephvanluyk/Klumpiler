@@ -15,7 +15,7 @@ std::string reservedWords[] = {"global", "const", "number", "decimal", "cstring"
 								"case", "default", "for", "to", "downto", "next", "break", "not", "or", "and"};
 std::string sym;
 std::ifstream inFile;
-
+std::string fname;
 //REQUIRES: sym to be set up with nextSym()
 token getNext(void){
 top:
@@ -189,4 +189,9 @@ std::string nextSym(){
 void setInFile(std::string fileName){
     inFile.open(fileName.c_str());
 
+}
+
+void resetFileIO(){
+    inFile.clear();
+    inFile.seekg(0, std::ios::beg);
 }
