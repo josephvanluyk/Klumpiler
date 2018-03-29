@@ -95,13 +95,14 @@ top:
 			lexeme = potentialIdentifier;
 		}
 	}else if(sym == "\'" || sym == "\""){							//If we find a ", we're looking at a string-literal
-		std::string literal = "\"";
+		std::string literal = sym;
+        std::string endMarker = literal;
 		sym = nextSym();
-		while(sym != "\'" && sym != "\""){							//Find the closing ". Until then, add on to the literal we've found.
+		while(sym != endMarker){							//Find the closing ". Until then, add on to the literal we've found.
 			literal += sym;
 			sym = nextSym();
 		}
-		literal += "\"";
+		literal += endMarker;
 		tokenName = "cstring";
 		lexeme = literal;							//In either case, the lexeme is the literal we've found.
 		sym = nextSym();

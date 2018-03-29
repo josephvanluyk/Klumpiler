@@ -17,8 +17,8 @@ begin
 
     writeln(arrTwo[0]);
 
-    if(not (1 = 2)) then
+    if(not (1 <> 2)) then
         writeln("Worked");
     else
-        writeln("Didnt work");
+        writeln("Didn't work");
 end.
