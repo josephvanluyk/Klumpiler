@@ -1,0 +1,16 @@
+global
+
+procedure main();
+dcl
+    x : int;
+begin;
+    readln(x);
+    writeln(cube(x));
+end
+
+procedure cube(x : int) : int;
+dcl
+begin
+    return x*x*x;
+end
+.

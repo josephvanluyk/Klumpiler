@@ -6,29 +6,9 @@ dcl
     test : myArr;
 procedure main();
 dcl
-begin
-
-    test[0] := 1;
-    test[1] := 2;
-    test[2] := 3;
-    test[3] := 4;
-    call testArr(test);
-    writeln(test[0], test[1], test[2], test[3]);
-
-
-end
-
-procedure testArr(arr : myArr);
-dcl
     i : int;
-    j : int;
 begin
-    for i := 0 to 3 do;
-        writeln(arr[i]);
-    end;
-
-    for i := 0 to 3 do;
-        arr[i] := arr[i] + 1;
-    end;
+    test[-1] := 2;
+    writeln(test[-1]);
 end
 .

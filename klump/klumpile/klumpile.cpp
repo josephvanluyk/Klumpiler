@@ -1221,6 +1221,42 @@ int assign_statement(){
                 error();
             }
 
+        }else if(id.type != REAL && id.type != BOOL && id.type != INT && id.type != STRING){
+            //We're looking at an array lval without a qualifier.
+            if(!match_token(tok.lexeme, ":=")){
+                error();
+            }
+            string name = tok.lexeme;
+            if(!match_token(tok.tokenName, "Identifier")){
+                error();
+            }
+            Variable lId = id;
+            Variable rId = getVariable(name);
+            if(lId.type == rId.type){
+                string top = generateLabel();
+                loadAddr(lId);
+                loadAddr(rId);
+                addLine("", "pop", "esi", "Pop copy address to edi");
+                addLine("", "pop", "edi", "Pop original address to esi");
+                addLine("", "mov", "eax, 0", "Set offset to 0");
+                addLine("", "mov", "ebx, " + appendString("", getArrType(lId.type).memReq), "Set target offset in ebx");
+                addLine(top, "", "", "Start copying");
+                addLine("", "push", "dword [esi + eax]", "Push source copy to stack");
+                addLine("", "pop", "dword [edi + eax]", "Pop copy to destination copy");
+                addLine("", "add", "eax, 4", "Increment offset");
+                addLine("", "cmp", "eax, ebx", "Compare offset to storage size");
+                addLine("", "jl", top, "If it's less than, jump back to the top");
+
+                if(!match_token(tok.lexeme, ";")){
+                    error();
+                }else{
+                    return FOUND;
+                }
+
+
+            }else{
+                cerr << "Incompatible assign" << endl;
+            }
         }
 		if(match_token(tok.lexeme, ":=")){
 			if(expression() == FOUND){						//Find an expression and push it to the stack
@@ -1635,7 +1671,7 @@ int comparison(){
 
 						}else if(typeTwo == INT){
 							addLine("", "sub", "esp, 4", "Make room on stack to convert int to real");
-							addLine("", "fild", "[esp + 4]", "Load int to floating point stack");
+							addLine("", "fild", "dword [esp + 4]", "Load int to floating point stack");
 							addLine("", "fstp", "qword [esp]", "Put new float back on stack");
 						}
 						/*
@@ -2242,7 +2278,7 @@ Procedure findProc(string name){
 }
 
 void convertIntToReal(){
-	addLine("", "fild", "[esp]", "Convert Int to Real");
+	addLine("", "fild", "dword [esp]", "Convert Int to Real");
 	addLine("", "sub", "esp, 4", "");
 	addLine("", "fstp", "qword [esp]", "Done converting int to real");
 }
