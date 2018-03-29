@@ -13,6 +13,7 @@ begin
     arrOne[1] := 1;
     arrOne[2] := 2;
     writeln(arrOne[0], arrOne[1], arrOne[2]);
-    arrOne := arrTwo;
+    arrTwo := arrOne;
+
     writeln(arrTwo[0]);
 end.

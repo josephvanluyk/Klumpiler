@@ -163,6 +163,9 @@ arrayType getArrType(string name);
 
 
 ofstream outFile;
+string outFileName;
+string execFileName;
+bool keepAsm;
 
 /*
 *
@@ -231,12 +234,18 @@ void setupInput(int argc, char** argv){
 }
 
 void setupOptions(int argc, char** argv){
-    string outFileName = "a.out";
+    outFileName = "a.asm";
+    execFileName = "a.out";
+    keepAsm = false;
     for(int i = 2; i < argc; i++){
         string option = argv[i];
         if(option == "-o"){
             i++;
+            execFileName = argv[i];
+        }else if(option == "-s"){
+            i++;
             outFileName = argv[i];
+            keepAsm = true;
         }
     }
     outFile.open(outFileName.c_str());
@@ -317,11 +326,12 @@ void loadProcVector(){
 void loadArrTypes(){
     sym = nextSym();
     tok = getNext();
-    while(tok.lexeme != "type"){
-        if(inFile.eof()){
-            return;
-        }
+    while(tok.lexeme != "type" && !inFile.eof()){
+
         tok = getNext();
+    }
+    if(inFile.eof()){
+        return;
     }
     tok = getNext();
     string arrName = tok.lexeme;
@@ -371,6 +381,16 @@ void loadArrTypes(){
 
 }
 
+void assemble(){
+    string cmd = "nasm -felf32 " + outFileName +
+                 " -o a.o && gcc -m32 a.o -o " + execFileName;
+    //cerr << cmd << endl;
+    system(cmd.c_str());
+    system("rm a.o");
+    if(!keepAsm){
+        system(("rm " + outFileName).c_str());
+    }
+}
 
 
 int main(int argc, char** argv){
@@ -390,6 +410,7 @@ int main(int argc, char** argv){
 	printIntro();
 	klump_program();
 	printOutro();
+    assemble();
 }
 
 //<klump_program> -> <global_definitions><procedure_list>.
