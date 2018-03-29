@@ -33,9 +33,9 @@ begin { main }
   writeln ('sum is: ',rz);
 
   rz := pi*(ix*rx - iy*ry);
-  {iz := rz;}
+  iz := rz;
   writeln ('rz equals: ',rz);
-  {writeln ('iz equals: ',iz);}
+  writeln ('iz equals: ',iz);
 
 end  { main }
 .

@@ -2263,8 +2263,12 @@ void addAssign(string typeTwo, string typeOne){
         addLine("", "mov", "[esi], eax", "");
 	}else if(typeOne == INT){
 		if(typeTwo == REAL){
-			cerr << "Cannot convert float to int" << endl;
-			error();
+			addLine("", "movsd", "xmm0, [esp + 4]", "Move real into xmm0 for conversion");
+            addLine("", "cvtsd2si", "eax, xmm0", "Convert real to int");
+            addLine("", "pop", "esi", "Pop address to esi");
+            addLine("", "mov", "[esi], eax", "Move converted float to address");
+            addLine("", "add", "esp, 8", "Clean up stack");
+
 		}else if(typeTwo == INT){
 		    addLine("", "pop", "esi", "Pop address to esi");
             addLine("", "pop", "dword [esi]", "Pop expression to address in esi");
