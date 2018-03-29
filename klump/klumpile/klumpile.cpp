@@ -1934,6 +1934,22 @@ int factor(){
 
 	if(match_token(tok.lexeme, "not")){
 		if(factor() == FOUND){
+            if(typeStack.top() == BOOL){
+                string equalLabel = generateLabel();
+                string endLabel = generateLabel();
+                addLine("", "pop", "eax", "Pop bool to eax for NOT operator");
+                addLine("", "mov", "ebx, 0", "Move 0 into ebx to compare for NOT operator");
+                addLine("", "cmp", "eax, ebx", "");
+                addLine("", "je", equalLabel, "If equal jump to push 1");
+                addLine("", "push", "0", "");
+                addLine("", "jmp", endLabel, "Jump to end to skip pushing 1");
+                addLine(equalLabel, "", "", "");
+                addLine("", "push", "1", "");
+                addLine(endLabel, "", "", "");
+            }else{
+                cerr << "Incompatible operand for NOT " << typeStack.top();
+                error();
+            }
 			return FOUND;
 		}
 		error();

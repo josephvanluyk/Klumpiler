@@ -16,4 +16,9 @@ begin
     arrTwo := arrOne;
 
     writeln(arrTwo[0]);
+
+    if(not (1 = 2)) then
+        writeln("Worked");
+    else
+        writeln("Didnt work");
 end.
