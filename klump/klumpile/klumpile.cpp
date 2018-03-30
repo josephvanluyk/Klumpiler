@@ -58,6 +58,12 @@ struct arrayType{
     int storageUnit;
     int memReq;
 };
+
+struct namedInt{
+    string name;
+    int val;
+};
+
 /*
 *
 *	END STRUCT DEFINITIONS
@@ -191,6 +197,7 @@ int storage = 0;
 vector<Variable> globalVars;
 vector<Variable> localVars;
 vector<Variable> constants;
+vector<namedInt> ints;
 
 stack<string> typeStack;
 stack<string> nextStack;
@@ -323,6 +330,41 @@ void loadProcVector(){
 
     }
 }
+
+void loadConstValues(){
+    sym = nextSym();
+    tok = getNext();
+    while(tok.lexeme != "const" && !inFile.eof()){
+        tok = getNext();
+    }
+    if(inFile.eof()){
+        return;
+    }
+    tok = getNext();
+    string name = tok.lexeme;
+    while(match_token(tok.tokenName, "Identifier")){
+        if(!match_token(tok.lexeme, ":")){
+            error();
+        }
+        string val = tok.lexeme;
+        if(match_token(tok.tokenName, "number")){
+            namedInt x;
+            x.name = name;
+            x.val = atoi(val.c_str());
+            ints.push_back(x);
+        }else{
+            tok = getNext();
+        }
+
+        if(!match_token(tok.lexeme, ";")){
+            error();
+        }
+        name = tok.lexeme;
+    }
+
+
+
+}
 void loadArrTypes(){
     sym = nextSym();
     tok = getNext();
@@ -350,7 +392,23 @@ void loadArrTypes(){
         string num = tok.lexeme;
         if(match_token(tok.tokenName, "number")){
             arr.capacity = atoi(num.c_str());
+        }else if(match_token(tok.tokenName, "Identifier")){
+            namedInt x;
+            bool found = false;
+            for(int i = 0; i < ints.size(); i++){
+                x = ints.at(i);
+                if(x.name == num){
+                    found = true;
+                    arr.capacity = x.val;
+                }
+            }
+            if(!found){
+                error();
+            }
+        }else{
+            error();
         }
+
         if(!match_token(tok.lexeme, "]")){
             error();
         }
@@ -396,6 +454,8 @@ void assemble(){
 int main(int argc, char** argv){
     setupInput(argc, argv);
     setupOptions(argc, argv);
+    loadConstValues();
+    resetFileIO();
     loadArrTypes();
     resetFileIO();
     loadProcVector();
@@ -556,7 +616,7 @@ int struct_type(){
 int array_type(){
 	if(match_token(tok.lexeme, "array")){
 		if(match_token(tok.lexeme, "[")
-		&& match_token(tok.tokenName, "number")
+		&& (match_token(tok.tokenName, "number") || match_token(tok.tokenName, "Identifier"))
 		&& match_token(tok.lexeme, "]")
 		&& match_token(tok.lexeme, "of")
 		&& dcl_type() == FOUND){

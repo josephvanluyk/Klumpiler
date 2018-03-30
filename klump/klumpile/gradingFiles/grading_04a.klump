@@ -5,7 +5,7 @@ global
     prompt      : 'enter the number of actual elements (1 <= n <= 100)';
 
   type
-    arraytype  : array [100] of real;
+    arraytype  : array [maxsize] of real;
 
   dcl
     actualsize : int;
