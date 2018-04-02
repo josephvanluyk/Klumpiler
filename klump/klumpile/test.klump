@@ -1,24 +1,23 @@
 global
 const
 type
-    myArr : array [3] of int;
+
 dcl
 procedure main();
 dcl
-    arrOne : myArr;
-    arrTwo : myArr;
+    i : int;
 begin
+    call testFun(1);
+    call testFun(3);
+    call testFun(5);
 
-    arrOne[0] := 0;
-    arrOne[1] := 1;
-    arrOne[2] := 2;
-    writeln(arrOne[0], arrOne[1], arrOne[2]);
-    arrTwo := arrOne;
+end
 
-    writeln(arrTwo[0]);
-
-    if(not (1 <> 2)) then
-        writeln("Worked");
-    else
-        writeln("Didn't work");
-end.
+procedure testFun(x : int);
+dcl
+begin
+    if(x > 3) then
+        return;
+    writeln("X is less than or equal to three: ", x);
+end
+.

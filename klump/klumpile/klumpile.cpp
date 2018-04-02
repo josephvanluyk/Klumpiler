@@ -1399,9 +1399,15 @@ int call_statement(){
 
 int return_statement(){
 	if(match_token(tok.lexeme, "return")){
+            Procedure proc = findProc(currentProc);
+            if(proc.returnType == NONE){
+                if(!match_token(tok.lexeme, ";")){
+                    error();
+                }
+                addLine("", "jmp", proc.exitLabel, "Jump to function exit");
+                return FOUND;
+            }else if(expression() == FOUND){
 
-			if(expression() == FOUND){
-					Procedure proc = findProc(currentProc);
 					if(proc.returnType == REAL){
 						if(typeStack.top() == REAL){
 							addLine("", "movsd", "xmm0, [esp]", "Move return value to xmm0");
