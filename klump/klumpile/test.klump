@@ -1,17 +1,18 @@
 global
 const
-    str : "test string";
 type
-    myArr : array[3] of int;
-    myArrTwo : array[2] of myArr;
 dcl
 procedure main();
 dcl
-    arr : myArrTwo ;
 begin
-    write(str);
-    readln(arr[0][1]);
-    writeln(arr[0][1]);
+    write("In main");
+    call procTwo();
 end
 
+procedure procTwo() : int;
+dcl
+begin
+    writeln("In proc two");
+    return 1;
+end
 .

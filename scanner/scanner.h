@@ -1,5 +1,6 @@
 #include<iostream>
 #include<string>
+#include<stdlib.h>
 #include "token.h"
 #include<vector>
 #include<fstream>
@@ -189,7 +190,10 @@ std::string nextSym(){
 
 void setInFile(std::string fileName){
     inFile.open(fileName.c_str());
-
+    if(!inFile){
+        std::cerr << "Failed to open file " << fileName << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 void resetFileIO(){
