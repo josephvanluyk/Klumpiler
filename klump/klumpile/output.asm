@@ -4,54 +4,51 @@
                extern    getchar             
                section   .text               
 main:                                        
-               push      Label0              	;Push address of string literal to stack
-               pop       dword [_str_]       	;Assign string address to const variable
 Entry_main:                                  
                push      ebp                 	;Store base pointer
                mov       ebp, esp            	;Create new base pointer
-               sub       esp, 8              
-               lea       eax, [_str_]        	;Load address into eax
+               sub       esp, 4              
+               lea       eax, [_test_]       	;Load address into eax
                push      eax                 
+               push      1                   	;Push int literal to stack
+               pop       eax                 	;Pop top of stack to negate
+               neg       eax                 
+               push      eax                 	;Push negated term to stack
+               pop       ebx                 	;Pop offset expression to ebx
+               pop       eax                 	;Pop head address to eax
+               lea       eax, [eax + ebx*8]  	;Calculate new offset
+               push      eax                 	;Push new address to stack
+               push      2                   	;Push int literal to stack
+               pop       eax                 	;Reorder address and expression on stack
+               pop       ecx                 	;Pop address to stack
+               push      eax                 	;Push expression back to stack
+               push      ecx                 	;Push address to stack
+               fild      dword [esp + 4]     	;Load top of stack to floating point stack
+               pop       eax                 	;Store address in eax
+               sub       esp, 4              	;Make room for new float
+               push      eax                 	;Push address back on stack
+               fstp      qword [esp + 4]     	;Convert 32-bit int to 64-bit float
                pop       esi                 	;Pop address to esi
-               push      dword [esi]         	;Push factor to stack
-               push      stringFrmt          	;Push format string for printf
-               call      printf              
-               add       esp, 8              
-               lea       eax, [ebp - 8]      	;Load address into eax
+               pop       eax                 
+               pop       ebx                 
+               mov       [esi + 4], ebx      	;Assign real in two parts
+               mov       [esi], eax          
+               lea       eax, [_test_]       	;Load address into eax
                push      eax                 
-               push      0                   	;Push int literal to stack
-               pop       ebx                 	;Pop offset expression to ebx
-               pop       eax                 	;Pop head address to eax
-               lea       eax, [eax + ebx*4]  	;Calculate new offset
-               push      eax                 	;Push new address to stack
                push      1                   	;Push int literal to stack
+               pop       eax                 	;Pop top of stack to negate
+               neg       eax                 
+               push      eax                 	;Push negated term to stack
                pop       ebx                 	;Pop offset expression to ebx
                pop       eax                 	;Pop head address to eax
-               lea       eax, [eax + ebx*4]  	;Calculate new offset
-               push      eax                 	;Push new address to stack
-               push      intFrmtIn           
-               call      scanf               	;Retrieve input from user
-               add       esp, 8              	;Remove arguments from stack
-Label1:        call      getchar             	;Remove characters until \n
-               cmp       eax, 0xA            
-               jne       Label1              	;If the character isn't \n, continue removing
-               lea       eax, [ebp - 8]      	;Load address into eax
-               push      eax                 
-               push      0                   	;Push int literal to stack
-               pop       ebx                 	;Pop offset expression to ebx
-               pop       eax                 	;Pop head address to eax
-               lea       eax, [eax + ebx*4]  	;Calculate new offset
-               push      eax                 	;Push new address to stack
-               push      1                   	;Push int literal to stack
-               pop       ebx                 	;Pop offset expression to ebx
-               pop       eax                 	;Pop head address to eax
-               lea       eax, [eax + ebx*4]  	;Calculate new offset
+               lea       eax, [eax + ebx*8]  	;Calculate new offset
                push      eax                 	;Push new address to stack
                pop       esi                 	;Pop address to esi
+               push      dword [esi + 4]     	;Push first half of real to stack
                push      dword [esi]         	;Push factor to stack
-               push      intFrmt             	;Push format string for printf
+               push      realFrmt            	;Push format string for printf
                call      printf              
-               add       esp, 8              
+               add       esp, 12             
                push      NewLine             	;Push newline to stack for printf
                call      printf              
                add       esp, 4              	;Clean up stack after printf
@@ -69,7 +66,6 @@ intFrmtIn:     db        "%i", 0             	;Read int
 stringFrmtIn:  db        "%s", 0             	;Read string
 NewLine:       db        0xA, 0              	;Print NewLine
 negone:        dq        -1.0                	;Negative one
-Label0:        db        "test string", 0    
                                              
                section   .bss                
-_str_:         resb(4)                       
+_test_:        resb(32)                      

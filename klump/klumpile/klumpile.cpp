@@ -462,11 +462,6 @@ int main(int argc, char** argv){
     resetFileIO();
 	sym = nextSym();
 	tok = getNext();
-	Procedure proc;
-	proc.name = "main";
-	proc.entryLabel = "Entry_" + proc.name;
-	proc.exitLabel = "Exit_" + proc.name;
-	procs.push_back(proc);
 	printIntro();
 	klump_program();
 	printOutro();
