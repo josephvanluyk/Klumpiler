@@ -1,23 +1,17 @@
 global
 const
+    str : "test string";
 type
-
+    myArr : array[3] of int;
+    myArrTwo : array[2] of myArr;
 dcl
 procedure main();
 dcl
-    i : int;
+    arr : myArrTwo ;
 begin
-    call testFun(1);
-    call testFun(3);
-    call testFun(5);
-
+    write(str);
+    readln(arr[0][1]);
+    writeln(arr[0][1]);
 end
 
-procedure testFun(x : int);
-dcl
-begin
-    if(x > 3) then
-        return;
-    writeln("X is less than or equal to three: ", x);
-end
 .

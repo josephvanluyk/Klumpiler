@@ -137,7 +137,7 @@ int mulop();
 int unary();
 int lval();
 int func_ref();
-int qualifier();
+int qualifier(arrayType type);
 bool match_token(string a, string b);
 void error();
 void addLine(string label, string opcode, string operands, string comment);
@@ -1173,41 +1173,16 @@ int read_statement(){
 			while(match_token(tok.tokenName, "Identifier")){
     			Variable idToWrite;
     			idToWrite = getVariable(id);
-                string type;
-                if(!match_token(tok.lexeme, "[")){
-                    //Dealing with regular identifier
-                    if(idToWrite.scope == GLOBAL){
-        				addLine("", "push", idToWrite.aName, "Push address to input variable");
-        			}else if(idToWrite.scope == LOCAL){
-        				addLine("", "mov", "eax, ebp", "");
-        				addLine("", "sub", appendString("eax, ", idToWrite.offset), "Subtract offset from ebp to find address of input variable");
-        				addLine("", "push", "eax", "");
-        			}else if(idToWrite.scope == CALLBY){
-                        addLine("", "push", "dword " + getOffsetString(idToWrite.offset), "Push address of callby variable to stack");
-                    }
-                    type = idToWrite.type;
-                }else{
-                    //Dealing with array
-                    if(expression() != FOUND){
-
-                        error();
-                    }
-                    if(typeStack.top() != INT){
-                        error();
-                    }else{
-                        typeStack.pop();
-                    }
+                string type = idToWrite.type;
+                loadAddr(idToWrite);
+                if(type != INT && type != REAL && type != BOOL && type != STRING){
                     arrayType arr = getArrType(idToWrite.type);
-                    loadAddr(idToWrite);
-                    addLine("", "pop", "eax", "Pop array head address");
-                    addLine("", "pop", "ebx", "Pop offset calculation");
-                    addLine("", "lea", "eax, [eax + " + appendString("", arr.storageUnit) + "*ebx]", "Perform offset calculation");
-                    addLine("", "push", "eax", "Push address to array variable");
-                    if(!match_token(tok.lexeme, "]")){
-                        error();
-                    }
-                    type = arr.type;
+                    typeStack.push(arr.name);
+                    qualifier(arr);
+                }else{
+                    typeStack.push(type);
                 }
+                type = typeStack.top();
                 if(type == INT){
                     addLine("", "push", "intFrmtIn", "");
                 }else if(type == REAL){
@@ -1215,7 +1190,7 @@ int read_statement(){
                 }else if(type == STRING){
                     addLine("", "push", "stringFrmtIn", "");
                 }else{
-                    cerr << "Cannot input type " << idToWrite.type << endl;
+                    cerr << "Cannot input type " << type << endl;
                     error();
                 }
 				addLine("", "call", "scanf", "Retrieve input from user");
@@ -1283,11 +1258,11 @@ int write_statement(){
 	return DOES_NOT_MATCH;
 }
 
-
+/*
 int assign_statement(){
 	token t = tok;
 	if(match_token(tok.tokenName, "Identifier")){
-		/* Have we seen this identifier declared? */
+		// Have we seen this identifier declared?
 		Variable id  = getVariable(t.lexeme);
         bool dealingWithArr = false;
 		if(match_token(tok.lexeme, "[")){
@@ -1374,6 +1349,56 @@ int assign_statement(){
 		error();
 	}
 	return DOES_NOT_MATCH;
+}*/
+
+int assign_statement(){
+    string id = tok.lexeme;
+    if(match_token(tok.tokenName, "Identifier")){
+        Variable var = getVariable(id);
+        loadAddr(var);
+        if(var.type != BOOL && var.type != STRING && var.type != INT && var.type != REAL){
+            arrayType arr = getArrType(var.type);
+            typeStack.push(arr.name);
+            qualifier(arr);
+        }else{
+            typeStack.push(var.type);
+        }
+        string typeOne = typeStack.top();
+        typeStack.pop();
+
+        if(!match_token(tok.lexeme, ":=")){
+            error();
+        }
+        if(expression() != FOUND){
+            error();
+        }
+
+        addLine("", "pop", "eax", "Reorder address and expression on stack");
+        if(typeStack.top() == REAL){
+            addLine("", "pop", "ebx", "Pop second part of real to ebx");
+        }
+        addLine("", "pop", "ecx", "Pop address to stack");
+
+        if(typeStack.top() == REAL){
+            addLine("", "push", "ebx", "Push first part of real to stack");
+        }
+        addLine("", "push", "eax", "Push expression back to stack");
+        addLine("", "push", "ecx", "Push address to stack");
+
+        string typeTwo = typeStack.top();
+        typeStack.pop();
+        addAssign(typeTwo, typeOne);
+
+        if(!match_token(tok.lexeme, ";")){
+            error();
+        }
+        return FOUND;
+
+
+
+    }
+
+    return DOES_NOT_MATCH;
 }
 
 int call_statement(){
@@ -2044,56 +2069,26 @@ int factor(){
 				return FOUND;
 			}
 			error();
-		}else if(match_token(tok.lexeme, "[")){           //Look for Qualifiers
-            //We're looking at a qualifier.
+		}else{
             Variable var = getVariable(id);
-            arrayType arr = getArrType(var.type);
-            if(expression() != FOUND){
-                error();
-            }
-            typeStack.pop();
-            if(!match_token(tok.lexeme, "]")){
-                error();
-            }
             loadAddr(var);
-            addLine("", "pop", "ebx", "");
-            addLine("", "pop", "eax", "");
-            addLine("", "lea", "esi, " + appendString("[ebx + eax*", arr.storageUnit) + "]", "Calculate offset");
-            if(arr.type == REAL){
-                addLine("", "push", "dword [esi + 4]", "Push real from array to stack in two parts");
+            if(var.type != BOOL && var.type != STRING && var.type != INT && var.type != REAL){
+                arrayType arr = getArrType(var.type);
+                typeStack.push(arr.name);
+                qualifier(arr);
+            }else{
+                typeStack.push(var.type);
             }
-            addLine("", "push", "dword [esi]", "Push from array to stack");
-            typeStack.push(arr.type);
+            string type = typeStack.top();
+            if(type == REAL || type == STRING || type == BOOL || type == INT){
+                addLine("", "pop", "esi", "Pop address to esi");
+                if(typeStack.top() == REAL){
+                    addLine("", "push", "dword [esi + 4]", "Push first half of real to stack");
+                }
+                addLine("", "push", "dword [esi]", "Push factor to stack");
+            }
             return FOUND;
 
-		}else{
-            if(next != "." && next != "["){
-                Variable found = getVariable(id);
-                typeStack.push(found.type);
-                if(found.type == REAL){
-                    if(found.scope == GLOBAL || found.scope == CONST){
-                        addLine("", "push", "dword [" + found.aName + " + 4]", "Push global real to stack in two parts");
-                        addLine("", "push", "dword [" + found.aName + "]", "");
-                    }else if(found.scope == LOCAL){
-                        addLine("", "push", "dword " + getOffsetString(found.offset - 4), "Push local real to stack in two parts");
-                        addLine("", "push", "dword " + getOffsetString(found.offset), "");
-                    }else if(found.scope == CALLBY){
-                        addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esp");
-                        addLine("", "push", "dword [esi + 4]", "Push first half of real");
-                        addLine("", "push", "dword [esi]", "");
-                    }
-                }else{
-                    if(found.scope == GLOBAL || found.scope == CONST){
-                        addLine("", "push", "dword [" + found.aName + "]", "Push global var to stack");
-                    }else if(found.scope == LOCAL){
-                        addLine("", "push", "dword " + getOffsetString(found.offset), "Push local var to stack");
-                    }else if(found.scope == CALLBY){
-                        addLine("", "mov", "esi, " + getOffsetString(found.offset), "Move callby address into esi");
-                        addLine("", "push", "dword [esi]", "Push value at address to stack");
-                    }
-                }
-            }
-            return FOUND;
         }
 
 
@@ -2158,21 +2153,32 @@ int unary(){
 }
 
 
-int qualifier(){
+int qualifier(arrayType type){
 	if(match_token(tok.lexeme, "[")){
+        typeStack.pop();
+        typeStack.push(type.type);
 		if(expression() == FOUND){
-			if(match_token(tok.lexeme, "]")){
-				if(qualifier() == FOUND){
-					return FOUND;
-				}
-			}
-		}
-		error();
+            if(typeStack.top() != INT){
+                cerr << "Invalid type " << typeStack.top() << " for index" << endl;
+                error();
+            }
+            typeStack.pop();
+            addLine("", "pop", "ebx", "Pop offset expression to ebx");
+            addLine("", "pop", "eax", "Pop head address to eax");
+            addLine("", "lea", "eax, [eax + ebx*" + appendString("", type.storageUnit) + "]", "Calculate new offset");
+            addLine("", "push", "eax", "Push new address to stack");
+            if(!match_token(tok.lexeme, "]")){
+                error();
+            }
+            if(type.type != BOOL && type.type != STRING && type.type != INT && type.type != REAL){
+                qualifier(getArrType(type.type));
+            }
+        }
 	}
 
 	if(match_token(tok.lexeme, ".")){
 		if(match_token(tok.tokenName, "Identifier")){
-			if(qualifier() == FOUND){
+			if(qualifier(type) == FOUND){
 				return FOUND;
 			}
 		}
@@ -2342,7 +2348,31 @@ void addAssign(string typeTwo, string typeOne){
 	}else if(typeOne == STRING){
 		addLine("", "pop", "esi", "Address to esi");
         addLine("", "pop", "dword [esi]", "Pop expression to address in esi");
-	}
+	}else{
+
+        //Dealing with an array Assign
+        if(typeOne != typeTwo){
+            cerr << "Unmatched types " << typeOne << " and " << typeTwo << endl;
+            error();
+        }
+        arrayType arrLeft = getArrType(typeOne);
+        arrayType arrRight = getArrType(typeTwo);
+        addLine("", "nop", "", "Begin copying array");
+        addLine("", "pop", "edi", "Pop array address to edi");
+        addLine("", "pop", "esi", "Pop copied array to esi");
+        string topLabel = generateLabel();
+        addLine("", "mov", "eax, 0", "Start offset at 0");
+        addLine("", "mov", "ebx, " + appendString("", arrLeft.memReq), "Move array size to ebx");
+        addLine(topLabel, "", "", "");
+        addLine("", "push", "dword [esi + eax]", "Push 32 bits from source array");
+        addLine("", "pop", "dword [edi + eax]", "Pop 32 bits to destination array");
+        addLine("", "add", "eax, 4", "Increment offset by four bytes");
+        addLine("", "cmp", "eax, ebx", "Compare offset to size");
+        addLine("", "jl", topLabel, "If it's less than, jump back to the top");
+    }
+
+
+
 }
 
 
@@ -2472,7 +2502,7 @@ void loadAddr(Variable var){
     if(var.scope == LOCAL){
         addLine("", "lea", "eax, " + getOffsetString(var.offset), "Load address into eax");
         addLine("", "push", "eax", "");
-    }else if(var.scope == GLOBAL){
+    }else if(var.scope == GLOBAL || var.scope == CONST){
         addLine("", "lea", "eax, [" + var.aName + "]", "Load address into eax");
         addLine("", "push", "eax", "");
     }else if(var.scope == CALLBY){

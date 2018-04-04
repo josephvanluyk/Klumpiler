@@ -40,9 +40,7 @@ begin { main }
       i := i + 1;
     end;
   writeln("");
-
   duplicate := data;
-
   i := 0;
   while (i < actualsize)
     do;

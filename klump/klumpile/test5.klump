@@ -1,16 +1,17 @@
 global
-
+type
+myArray : array[5] of int;
+myArrayTwo : array[2] of myArray;
 procedure main();
 dcl
-    x : int;
+    arr : myArrayTwo;
 begin;
-    readln(x);
-    writeln(cube(x));
+    arr[0][0] := 2;
+    arr[2][3] := 9;
+    writeln(arr[0][0]);
+    writeln(arr[2][3]);
 end
 
-procedure cube(x : int) : int;
-dcl
-begin
-    return x*x*x;
-end
+
+
 .
