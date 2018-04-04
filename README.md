@@ -12,7 +12,7 @@ And compile using g++
 
 The previous command will create an executable named klumpile in the current directory. From there, you can add it to your system path as appropriate for your operating system. On Ubuntu this can be done by running `cp klumpile ~/bin/`. If `~/bin/` does not exist, create it first with `mkdir ~/bin/`.
 
-To compile a *.klump* file using this compiler use the command `klumpile <klump program> [-o output executable] [-s output assembly]`
+To compile a *.klump* file using this compiler use the command `klumpile <klump program> [-o output executable] [-s output assembly]`. This requires nasm and gcc to be preinstalled.
 
 By default, it will create an executable named `a.out` in your current directory. The -o flag changes the name of this executable. If the -s flag is used, it will also keep the assembly output in the desired file name.
 
