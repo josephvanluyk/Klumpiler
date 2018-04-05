@@ -1688,18 +1688,20 @@ int for_statement(){
                                 addLine("", "pop", "esi", "");
                                 addLine("", "mov", "dword eax, [esi]", "");
                                 if(direction == "downto"){
-                                    addLine("", "dec", "eax", "Decrmeent Loop Counter");
+                                    addLine("", "dec", "eax", "Decrement Loop Counter");
                                 }else{
                                     addLine("", "inc", "eax", "Increment Loop Counter");
                                 }
                                 addLine("", "mov", "[esi], eax", "Put updated Loop Counter into memory location");
                                 addLine("", "jmp", topLabel, "");
                                 addLine(exitLabel, "", "", "Exit destination for loop");
-                                addLine("", "add", "esp, 4", "Remove counter from stack");
+                                //addLine("", "add", "esp, 4", "Remove counter from stack");
                                 nextStack.pop();
                                 breakStack.pop();
 								return FOUND;
-							}
+							}else{
+                                error();
+                            }
 						}
 					}
 				}
