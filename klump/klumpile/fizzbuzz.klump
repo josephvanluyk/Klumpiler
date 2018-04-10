@@ -1,0 +1,22 @@
+global
+const
+dcl
+procedure main();
+dcl
+	i : int;
+begin
+	for i := 1 to 100 do;
+		if((i % 3 = 0) and (i % 5 = 0)) then
+			writeln("Fizzbuzz");
+		else do;
+			if(i % 3 = 0) then
+				writeln("Fizz");
+			else do;
+				if(i % 5 = 0) then
+					writeln("buzz");
+				else
+					writeln(i);
+			end;
+		end;
+	end;
+end.
