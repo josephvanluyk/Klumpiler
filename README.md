@@ -23,3 +23,8 @@ To manually assemble and link a generated assembly file, use the following comma
 `nasm -felf32 <assembly file> -o <object file name>`
 
 `gcc -m32 <object file name> -o <executable name>`
+
+---
+# Pal
+
+Pal is a subset of Klump. It has very few features: input, variables (integer only), assignment, arithmetic, and output (no input). Sample pal files have the extension *.pal*.
