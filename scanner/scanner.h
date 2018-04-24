@@ -13,7 +13,7 @@ std::string reservedWords[] = {"global", "const", "number", "decimal", "cstring"
 								"array", "of", "record", "end", "dcl", "bool", "int", "real",
 								"string", "proc", "var", "procedure", "begin", "end", "read", "write",
 								"readln", "writeln", "call", "return", "goto", "do", "if", "then", "else", "while",
-								"case", "default", "for", "to", "downto", "next", "break", "not", "or", "and"};
+								"case", "default", "for", "to", "downto", "next", "break", "not", "or", "and", "randint"};
 std::string sym;
 std::ifstream inFile;
 std::string fname;

@@ -431,7 +431,6 @@ void loadArrTypes(){
 
 
 
-
         arrName = tok.lexeme;
     }
 
@@ -2042,7 +2041,94 @@ int factor(){
 		}
 		error();
 	}
+    if(match_token(tok.lexeme, "randint")){
+        if(!match_token(tok.lexeme, "(")){
+            error();
+        }
+        addLine("", "sub", "esp, 4", "Make room for file descriptor later");
+        if(expression() != FOUND){
+            error();
+        }
+        if(typeStack.top() != INT){
+            cerr << "Arguments to randint must be integers" << endl;
+            error();
+        }
+        typeStack.pop();
+        if(!match_token(tok.lexeme, ",")){
+            error();
+        }
+        if(expression() != FOUND){
+            error();
+        }
+        if(typeStack.top() != INT){
+            cerr << "Arguments to randint must be integers" << endl;
+            error();
+        }
+        typeStack.pop();
 
+        addLine("", "mov", "eax, 5", "Move sys_open call to eax");
+        addLine("", "mov", "ebx, randIn", "filename to ebx");
+        addLine("", "mov", "ecx, 0", "Permissions are read-only");
+        addLine("", "int", "0x80", "syscall");
+        addLine("", "mov", "[esp + 8], eax", "Store file descriptor");
+        addLine("", "mov", "ebx, eax", "Move file descriptor to ebx");
+        addLine("", "mov", "eax, 3", "Move sys_read call to eax");
+        addLine("", "sub", "esp, 4", "Make room for read integer");
+        addLine("", "mov", "ecx, esp", "Make input pointer esp");
+        addLine("", "mov", "edx, 4", "Input 4 bytes");
+        addLine("", "int", "0x80", "syscall");
+
+        addLine("", "mov", "eax, [esp + 4]", "Move upper bound to eax");
+        addLine("", "mov", "ebx, [esp + 8]", "Move lower bound to ebx");
+
+        addLine("", "sub", "eax, ebx", "Calculate randint range");
+        addLine("", "push", "eax", "Push range to stack");
+        string end = generateLabel();
+
+        addLine("", "mov", "ebx, 0", "");
+        addLine("", "cmp", "eax, ebx", "Test if the range is 0");
+        addLine("", "je", end, "If it is, jump to the end");
+
+        addLine("", "mov", "eax, [esp + 4]", "Move random int to eax");
+        addLine("", "mov", "ebx, [esp]", "Move range to ebx");
+        addLine("", "cdq", "", "");
+        addLine("", "idiv", "ebx", "");
+        addLine("", "mov", "eax, edx", "");
+
+        //Modulo'd result is now in eax
+
+        addLine("", "mov", "ebx, 0", "");
+        addLine("", "cmp", "eax, ebx", "Compare if the result is negative");
+        addLine("", "jge", end, "If it's not, jump to the end");
+
+        addLine("", "mov", "ebx, [esp]", "Move range to ebx");
+        addLine("", "add", "eax, ebx", "Increment result by range");
+
+        addLine(end, "", "", "");
+        addLine("", "mov", "ebx, [esp + 12]", "Move lower bound to ebx");
+        addLine("", "add", "eax, ebx", "Add lower bound to result");
+        addLine("", "add", "esp, 16", "Clean up stack");
+
+        addLine("", "pop", "ebx", "Move file descriptor for /dev/urandom");
+        addLine("", "push", "eax", "Push result to stack");
+
+        addLine("", "mov", "eax, 6", "sys_close");
+        addLine("", "int", "0x80", "");
+
+
+
+
+        typeStack.push(INT);
+        if(!match_token(tok.lexeme, ")")){
+            error();
+        }
+
+
+        return FOUND;
+
+
+
+    }
 
 	/* Lval or fun_ref? */
 	/* First token is an Identifier...*/
@@ -2246,6 +2332,7 @@ void printOutro(){
 	addLine("intFrmtIn", "db", "\"%i\", 0", "Read int");
 	addLine("stringFrmtIn", "db", "\"%s\", 0", "Read string");
 	addLine("NewLine", "db", "0xA, 0", "Print NewLine");
+    addLine("randIn", "db", "\"/dev/urandom\"", "File for random bytes");
 
 	addLine("negone", "dq", "-1.0", "Negative one");
 	/*
@@ -2516,6 +2603,8 @@ string findTypeName(){
         return REAL;
     }else if(match_token(tok.lexeme, "bool")){
         return BOOL;
+    }else if(match_token(tok.lexeme, "string")){
+        return STRING;
     }else if(match_token(tok.tokenName, "Identifier")){
         return type;
     }
