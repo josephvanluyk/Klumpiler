@@ -7,13 +7,17 @@ dcl
     i : int;
     j : int;
     temp : int;
-
+    x : int;
+    y : int;
 begin
+    write("Enter the upper bound: ");
+    readln(y);
+    write("Enter the lower bound: ");
+    readln(x);
     for i := 0 to 9 do;
-        arr[i] := randint(-4, 5);
-        write(arr[i], "   ");
+        arr[i] := randint(x, y);
+        writeln(arr[i]);
     end;
-    writeln("");
 
     for i := 0 to 9 do;
         for j := 0 to (8 - i) do;
@@ -24,10 +28,9 @@ begin
             end;
         end;
     end;
-
+    writeln("------");
     for i := 0 to 9 do;
-        write(arr[i]);
-        write("   ");
+        writeln(arr[i]);
     end;
     writeln("");
 end.

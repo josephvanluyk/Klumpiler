@@ -1,0 +1,7 @@
+global
+dcl
+procedure main();
+dcl
+begin
+	write(3);
+end.

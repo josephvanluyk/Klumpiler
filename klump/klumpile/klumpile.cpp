@@ -213,6 +213,9 @@ vector<arrayType> arrays;
 *
 */
 
+
+//  Error in the grammar of the source code
+//  End the program, spit out the error
 void error(){
 	cerr << "Error on line " << tok.lineNumber << endl;
 	cerr << tok.lineNumber - 1 << ": " << lineOne;
@@ -224,6 +227,8 @@ void error(){
 	exit(EXIT_FAILURE);
 }
 
+//Check if the token matches expected token
+//If it does, get the next one
 bool match_token(string a, string b){
 	if(a == b){
 		tok = getNext();
@@ -232,6 +237,7 @@ bool match_token(string a, string b){
 	return false;
 }
 
+//Grab input file name, set up file output
 void setupInput(int argc, char** argv){
     if(argc <= 1){
         cerr << "Invalid input file" << endl;
@@ -240,6 +246,7 @@ void setupInput(int argc, char** argv){
     setInFile(argv[1]);
 }
 
+//Take setup options, setup output files
 void setupOptions(int argc, char** argv){
     outFileName = "a.asm";
     execFileName = "a.out";
@@ -258,6 +265,7 @@ void setupOptions(int argc, char** argv){
     outFile.open(outFileName.c_str());
 }
 
+//Run through the code and fill in header information for procedures
 void loadProcVector(){
     sym = nextSym();
     tok = getNext();
@@ -331,6 +339,9 @@ void loadProcVector(){
     }
 }
 
+
+//Run through the code and note values of constant variables
+        //Required for constant-length arrays
 void loadConstValues(){
     sym = nextSym();
     tok = getNext();
@@ -365,6 +376,8 @@ void loadConstValues(){
 
 
 }
+
+//Run through code and keep track of array type declarations
 void loadArrTypes(){
     sym = nextSym();
     tok = getNext();
@@ -438,6 +451,7 @@ void loadArrTypes(){
 
 }
 
+//Assemble the generated assembly code
 void assemble(){
     string cmd = "nasm -felf32 " + outFileName +
                  " -o a.o && gcc -m32 a.o -o " + execFileName;
@@ -502,7 +516,7 @@ int const_definitions(){
 	return FOUND;
 }
 
-
+// <const_list> -> {IDENTIFIER : <const> ;}+
 int const_list(){
 	token t = tok;
 	bool pass = false;;
@@ -544,7 +558,7 @@ int const_list(){
 	return FOUND;
 }
 
-
+//<const> -> NUMBER | DECIMAL | CSTRING
 int _const(){
 	token t = tok;
 	if(match_token(tok.tokenName, "number") || match_token(tok.tokenName, "decimal") || match_token(tok.tokenName, "cstring")){
@@ -574,6 +588,7 @@ int _const(){
 	return DOES_NOT_MATCH;
 }
 
+//<type_definitions> -> TYPE <type_list> | e
 int type_definitions(){
 	if(match_token(tok.lexeme, "type")){
 		if(type_list() == FOUND){
@@ -584,6 +599,8 @@ int type_definitions(){
 	return FOUND;
 }
 
+
+//<type_list> -> {IDNETIFIER : <structure_type>;}+
 int type_list(){
 	while(match_token(tok.tokenName, "Identifier")){
 		if(match_token(tok.lexeme, ":")
@@ -597,7 +614,7 @@ int type_list(){
 	return FOUND;
 }
 
-
+//<struct_type> -> <array_type> | <record_type>
 int struct_type(){
 	if(array_type() == DOES_NOT_MATCH){
 		return record_type();
@@ -606,7 +623,7 @@ int struct_type(){
 	return FOUND;
 }
 
-
+// <array_type> -> ARRAY | NUMBER | OF <dcl_type>
 int array_type(){
 	if(match_token(tok.lexeme, "array")){
 		if(match_token(tok.lexeme, "[")
@@ -622,7 +639,7 @@ int array_type(){
 	return DOES_NOT_MATCH;
 }
 
-
+//record_type> -> RECORD <fld_list> END
 int record_type(){
 	if(match_token(tok.lexeme, "record")){
 		if(fld_list() == FOUND && match_token(tok.lexeme, "end")){
@@ -633,7 +650,7 @@ int record_type(){
 	return DOES_NOT_MATCH;
 }
 
-
+//<fld_list> -> {IDENTIFIER : <dcl_type> ;}+
 int fld_list(){
 	while(match_token(tok.tokenName, "Identifier")){
 		if(match_token(tok.lexeme, ":")
@@ -647,6 +664,7 @@ int fld_list(){
 	return FOUND;
 }
 
+//<dcl_definitions> -> DCL <dcl_list> | e
 int dcl_definitions(int scope){
 	if(match_token(tok.lexeme, "dcl")){
 		if(dcl_list(scope) == FOUND){
@@ -658,7 +676,7 @@ int dcl_definitions(int scope){
 	return FOUND;
 }
 
-
+// <dcl_list> -> {IDENTIFIER : dcl_type;}+
 int dcl_list(int scope){
 	bool pass = false;
 	token t1 = tok;
@@ -715,6 +733,7 @@ int dcl_list(int scope){
 	return FOUND;
 }
 
+//<dcl_type> -> <atomic_type> | IDENTIFIER
 int dcl_type(){
 	if(atomic_type() == FOUND){
 		return FOUND;
@@ -727,7 +746,7 @@ int dcl_type(){
 	}
 }
 
-
+// <atomic_type> -> BOOL | INT | REAL | STRING
 int atomic_type(){
 	if(match_token(tok.lexeme, "bool") || match_token(tok.lexeme, "real")
 		|| match_token(tok.lexeme, "int") || match_token(tok.lexeme, "string")){
@@ -736,6 +755,7 @@ int atomic_type(){
 	return DOES_NOT_MATCH;
 }
 
+// <proc_declarations> -> PROC <signature_list> | e
 int proc_declarations(){
 	if(match_token(tok.lexeme, "proc")){
 		if(signature_list() == FOUND){
@@ -746,6 +766,7 @@ int proc_declarations(){
 	return FOUND;
 }
 
+//<signature_list> -> <proc_signature>{;<proc_signature>}* | e
 int signature_list(){
 	if(proc_signature() == FOUND){
 		while(match_token(tok.lexeme, ";")){
@@ -761,6 +782,7 @@ int signature_list(){
 	return FOUND;
 }
 
+//<proc_signature> -> IDENTIFIER <formal_args><return_type>;
 int proc_signature(){
 	string name = tok.lexeme;
 	Procedure proc;
@@ -863,6 +885,8 @@ int proc_signature(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<formal_arg> -> <call_by> IDENTIFIER : <dcl_type>
 int formal_args(){
 	if(match_token(tok.lexeme, "(")){
 		if(formal_arg_list() == FOUND){
@@ -876,6 +900,7 @@ int formal_args(){
 	return FOUND;
 }
 
+//<formal_arg_list> -> <formal_arg> {, <formal_arg>}*
 int formal_arg_list(){
 
 	if(formal_arg() == FOUND){
@@ -892,6 +917,7 @@ int formal_arg_list(){
 
 }
 
+//<formal_arg> -> <call_by> IDENTIFIER : <dcl_type>
 int formal_arg(){
 	if(call_by() == FOUND){
 		if(match_token(tok.tokenName, "Identifier") && match_token(tok.lexeme, ":") && dcl_type() == FOUND){
@@ -902,6 +928,8 @@ int formal_arg(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<call_by> -> VAR | e
 int call_by(){
 	if(match_token(tok.lexeme, "var")){
 		return FOUND;
@@ -910,6 +938,8 @@ int call_by(){
 	return FOUND;
 }
 
+
+//<return_type> -> <atomic_type> | e
 int return_type(){
 	if(match_token(tok.lexeme, ":")){
 		if(atomic_type() == FOUND){
@@ -920,6 +950,8 @@ int return_type(){
 	return FOUND;
 }
 
+
+//<actual_args> -> {<actual_arg_list>} | e
 int actual_args(){
 	if(match_token(tok.lexeme, "(")){
 		if(actual_arg_list() == FOUND){
@@ -932,6 +964,7 @@ int actual_args(){
 	return DOES_NOT_MATCH;
 }
 
+//<actual_arg_list> -> <actual_arg> {, <actual_arg> }*
 int actual_arg_list(){
 	if(actual_arg() == FOUND){
 		while(match_token(tok.lexeme, ",") ){
@@ -946,10 +979,13 @@ int actual_arg_list(){
 
 }
 
+//<actual_arg> -> <expression>
 int actual_arg(){
 	return expression();
 }
 
+
+//<procedure_list> -> {<procedure>}*
 int procedure_list(){
 	while(procedure() == FOUND){
 		localVars.clear();
@@ -964,6 +1000,7 @@ int procedure_list(){
 	return FOUND;
 }
 
+//<procedure> -> <proc_head><proc_body>
 int procedure(){
 	storage = 0;
 
@@ -988,6 +1025,8 @@ int procedure(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<proc_head> -> PROCEDURE IDENTIFIER;
 int proc_head(){
 	if(match_token(tok.lexeme, "procedure")){
 		string name = tok.lexeme;
@@ -1024,6 +1063,7 @@ int proc_head(){
 	return DOES_NOT_MATCH;
 }
 
+//<proc_body> -> <dcl_definitions> BEGIN <statement_list> END
 int proc_body(){
 	if(dcl_definitions(LOCAL) == FOUND){
 		addLine("Entry_" + currentProc, "", "", "");
@@ -1041,12 +1081,16 @@ int proc_body(){
 		}
 	return DOES_NOT_MATCH;
 }
+
+//<statement_list> -> {<statement>}*
 int statement_list(){
 	while(statement() == FOUND){
 
 	}
 	return FOUND;
 }
+
+//<statement> -> <label><exec_statement>
 int statement(){
 	if(label() == FOUND){
 		if(exec_statement() == FOUND){
@@ -1056,6 +1100,8 @@ int statement(){
 	}
 	return DOES_NOT_MATCH;
 }
+
+//<label> -> # NUMBER | e
 int label(){
 	if(match_token(tok.lexeme, "#")){
 		string label = "#" + tok.lexeme;
@@ -1087,6 +1133,20 @@ int label(){
 	return FOUND;
 }
 
+// <exec_statement> -> <read_statement>
+//                  | <write_statement>
+//                  | <assign_statement>
+//                  | <call_statement>
+//                  | <return_statement>
+//                  | <goto_statement>
+//                  | <empty_statement>
+//                  | <compound_statement>
+//                  | <if_statement>
+//                  | <while_statement>
+//                  | <case_statement>
+//                  | <for_statement>
+//                  | <next_statement>
+//                  | <break_statement>
 int exec_statement(){
 
 	int result = read_statement();
@@ -1158,7 +1218,7 @@ int exec_statement(){
 	return DOES_NOT_MATCH;
 }
 
-
+//<read_statement> -> READ <actual_args> ; | READLN <actual_args> ;
 int read_statement(){
 	string call = tok.lexeme;
 	if(match_token(tok.lexeme, "read") || match_token(tok.lexeme, "readln")){
@@ -1214,6 +1274,7 @@ int read_statement(){
 	return DOES_NOT_MATCH;
 }
 
+//<write_statement> -> WRITE <actual_args> | WRITELN <actual_args>;
 int write_statement(){
 	string call = tok.lexeme;
 	if(match_token(tok.lexeme, "write") || match_token(tok.lexeme, "writeln")){
@@ -1345,6 +1406,8 @@ int assign_statement(){
 	return DOES_NOT_MATCH;
 }*/
 
+
+//<assign_statement> -> <lval> := <expression> ;
 int assign_statement(){
     string id = tok.lexeme;
     if(match_token(tok.tokenName, "Identifier")){
@@ -1395,6 +1458,7 @@ int assign_statement(){
     return DOES_NOT_MATCH;
 }
 
+//<call_statement> -> CALL IDENTIFIER <actual_args> ;
 int call_statement(){
 	if(match_token(tok.lexeme, "call")){
 		string name = tok.lexeme;
@@ -1416,6 +1480,8 @@ int call_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<return_statement> -> RETURN <expression>;
 int return_statement(){
 	if(match_token(tok.lexeme, "return")){
             Procedure proc = findProc(currentProc);
@@ -1453,6 +1519,8 @@ int return_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+// <goto_statement> -> GOTO <label> ;
 int goto_statement(){
 	if(match_token(tok.lexeme, "goto")){
 		if(match_token(tok.lexeme, "#")){
@@ -1482,12 +1550,16 @@ int goto_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<empty_statement> -> ;
 int empty_statement(){
 	if(match_token(tok.lexeme, ";")){
 		return FOUND;
 	}
 	return DOES_NOT_MATCH;
 }
+
+//<compound_statement> -> DO ; <statement_list> END;
 int compound_statement(){
 	if(match_token(tok.lexeme, "do")){
 		if(match_token(tok.lexeme, ";")){
@@ -1505,7 +1577,7 @@ int compound_statement(){
 	return DOES_NOT_MATCH;
 }
 
-
+// <if_statement> -> IF (<comparison>) THEN <statement> <else_clause>
 int if_statement(){
 	if(match_token(tok.lexeme, "if")){
 		if(match_token(tok.lexeme, "(")){
@@ -1541,6 +1613,8 @@ int if_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<else_clause> -> ELSE <statement> | e
 int else_clause(){
 	if(match_token(tok.lexeme, "else")){
 		if(statement() == FOUND){
@@ -1551,6 +1625,7 @@ int else_clause(){
 	return FOUND;
 }
 
+//<while_statement> -> WHILE(<comparison>)<statement>
 int while_statement(){
 	if(match_token(tok.lexeme, "while")){
 		if(match_token(tok.lexeme, "(")){
@@ -1585,6 +1660,7 @@ int while_statement(){
 	return DOES_NOT_MATCH;
 }
 
+//<case_statement> -> CASE (<expression>) <case_list>
 int case_statement(){
 	if(match_token(tok.lexeme, "case")){
 		if(match_token(tok.lexeme, "(")){
@@ -1602,6 +1678,8 @@ int case_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<case_list> -> {<unary> NUMBER : <statement>}* DEFAULT : <statement>
 int case_list(){
     string done = generateLabel();
 	string un = tok.lexeme;
@@ -1644,6 +1722,7 @@ int case_list(){
 
 }
 
+//<for_statement> -> FOR IDENTIFIER := <expression> {TO | DOWNTO} <expression> <statement>
 int for_statement(){
 	if(match_token(tok.lexeme, "for")){
         Variable id = getVariable(tok.lexeme);
@@ -1711,6 +1790,8 @@ int for_statement(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<next_statement> -> NEXT;
 int next_statement(){
 	if(match_token(tok.lexeme, "next")){
 		if(match_token(tok.lexeme, ";")){
@@ -1722,6 +1803,7 @@ int next_statement(){
 	return DOES_NOT_MATCH;
 }
 
+//<break_statement> -> BREAK;
 int break_statement(){
 	if(match_token(tok.lexeme, "break")){
 		if(match_token(tok.lexeme, ";")){
@@ -1733,10 +1815,12 @@ int break_statement(){
 	return DOES_NOT_MATCH;
 }
 
+//<expression> -> <comparison>
 int expression(){
 	return comparison();
 }
 
+//<comparison> -> <simple_expression> {<compop><simple_expression>}*
 int comparison(){
 	if(simple_expression() == FOUND){
 		string comparison = tok.lexeme;
@@ -1833,6 +1917,7 @@ int comparison(){
 
 }
 
+//<simple_expression> -> <unary><term> {<addop><term>}*
 int simple_expression(){
 	bool pass = false;
 	string un = tok.lexeme;
@@ -1927,6 +2012,8 @@ int simple_expression(){
 	return DOES_NOT_MATCH;
 }
 
+
+//<term> -> <factor>{<mulop><factor>}*
 int term(){
 
 	if(factor() == FOUND){
@@ -2004,6 +2091,7 @@ int term(){
 	return DOES_NOT_MATCH;
 }
 
+//<factor> -> <const> | <func_ref> | <lval> | (<expression) | NOT <factor>
 int factor(){
 	int result;
 	result = _const();
@@ -2180,7 +2268,7 @@ int factor(){
 	return DOES_NOT_MATCH;
 }
 
-
+//<compop> -> = | <> | > | < | >= | <=
 int compop(){
 	if(match_token(tok.lexeme, "=")){
 		return FOUND;
@@ -2199,6 +2287,7 @@ int compop(){
 	return DOES_NOT_MATCH;
 }
 
+//<addop> -> + | - | OR
 int addop(){
 	if(match_token(tok.lexeme, "+")){
 		return FOUND;
@@ -2211,6 +2300,7 @@ int addop(){
 	return DOES_NOT_MATCH;
 }
 
+//<mulop> -> * | / | % \ AND
 int mulop(){
 	if(match_token(tok.lexeme, "*")){
 		return FOUND;
@@ -2225,6 +2315,7 @@ int mulop(){
 	return DOES_NOT_MATCH;
 }
 
+//<unary> -> + | - | e
 int unary(){
 	if(match_token(tok.lexeme, "+")){
 		return FOUND;
@@ -2235,7 +2326,9 @@ int unary(){
 	}
 }
 
-
+//<qualifier> -> [<expression>] <qualifier>
+//            | . IDENTIFER <qualifier>
+//            | e
 int qualifier(arrayType type){
 	if(match_token(tok.lexeme, "[")){
         typeStack.pop();
@@ -2272,6 +2365,7 @@ int qualifier(arrayType type){
 }
 
 
+//Output Assembly Source Line
 void addLine(string label, string opcode, string operands, string comment){
 
   if (label != "")
@@ -2303,17 +2397,21 @@ string generateLabel(){
 	return out;
 }
 
+//Helper function. Append int to string
 string appendString(string str, int n){
 	stringstream ss;
 	ss << str << n;
 	return ss.str();
 }
 
+//Generate Address Calculation Code
 string getOffsetString(int offset){
 	stringstream ss;
 	ss << "[ebp - " << offset << "]";
 	return ss.str();
 }
+
+//Setup ASM source
 void printIntro(){
 	addLine("", "global", "main", "");
 	addLine("", "extern", "printf", "");
@@ -2322,6 +2420,7 @@ void printIntro(){
 	addLine("", "section", ".text", "");
 	addLine("main", "", "", "");
 }
+//Declare Memory locations
 void printOutro(){
 	addLine("", "", "", "");
 	addLine("", "section", ".data", "");
@@ -2382,7 +2481,7 @@ void printOutro(){
 
 }
 
-
+//Swap float and int on top of stack
 void swapTopOfStack(){
 	addLine("", "movsd", "xmm0, [esp]", "Switch order of operands on stack");
 	addLine("", "mov", "eax, [esp + 8]", "");
@@ -2390,12 +2489,14 @@ void swapTopOfStack(){
 	addLine("", "mov", "[esp], eax", "Finish pushing in reverse order");
 }
 
+//Convert int on stack to float
 void convertTopOfStackToFloat(){
 	addLine("", "fild", "dword [esp]", "Convert int on stack to float");
 	addLine("", "sub", "esp, 4", "Make room on stack for float");
 	addLine("", "fstp", "qword [esp]", "Put new float on stack");
 }
 
+//Print New Line in ASM source
 void printNewLine(){
 	addLine("", "push", "NewLine", "Push newline to stack for printf");
 	addLine("", "call", "printf", "");
@@ -2403,6 +2504,7 @@ void printNewLine(){
 
 }
 
+//Given two types on the stack, add them and add the result to the stack
 void addAssign(string typeTwo, string typeOne){
 	if(typeOne == REAL){
 		if(typeTwo == INT){
@@ -2459,7 +2561,7 @@ void addAssign(string typeTwo, string typeOne){
 
 }
 
-
+//Return Variable info given name
 Variable getVariable(string kName){
 	Variable found;
 	for(int i = 0; i < localVars.size(); i++){
@@ -2485,7 +2587,7 @@ Variable getVariable(string kName){
 	return v;
 }
 
-
+//Return proc info given name
 Procedure findProc(string name){
 	for(int i = 0; i < procs.size(); i++){
 
@@ -2498,11 +2600,13 @@ Procedure findProc(string name){
 	return procs.at(0);
 }
 
+//Convert int on top of stack to real
 void convertIntToReal(){
 	addLine("", "fild", "dword [esp]", "Convert Int to Real");
 	addLine("", "sub", "esp, 4", "");
 	addLine("", "fstp", "qword [esp]", "Done converting int to real");
 }
+
 
 void processArgs(Procedure proc){
 	vector<Argument> args = proc.args;
@@ -2544,7 +2648,7 @@ void processArgs(Procedure proc){
 		}
 	}
 }
-
+// Create local variable information for function arguments
 void loadArgsToLocalVariables(Procedure proc){
 	int offset = -8;
 	vector<Argument> args = proc.args;
@@ -2570,6 +2674,7 @@ void loadArgsToLocalVariables(Procedure proc){
 
 }
 
+//Clean up stack after function
 void removeArgsFromStack(Procedure proc){
 	int size = 0;
 	for(int i = 0; i < proc.args.size(); i++){
@@ -2582,6 +2687,7 @@ void removeArgsFromStack(Procedure proc){
 	addLine("", "add", appendString("esp, ", size), "Remove args from stack");
 }
 
+//Given variable, put its address on the stack
 void loadAddr(Variable var){
     if(var.scope == LOCAL){
         addLine("", "lea", "eax, " + getOffsetString(var.offset), "Load address into eax");
@@ -2594,7 +2700,7 @@ void loadAddr(Variable var){
     }
 }
 
-
+//Convert source type to internal type
 string findTypeName(){
     string type = tok.lexeme;
     if(match_token(tok.lexeme, "int")){
@@ -2612,6 +2718,7 @@ string findTypeName(){
     return NONE;
 }
 
+//Return array info given name
 arrayType getArrType(string name){
     for(int i = 0; i < arrays.size(); i++){
         if(arrays.at(i).name == name){
