@@ -1,4 +1,4 @@
-#include "../../scanner/scanner.h"
+#include "../../scanner/scanner.cpp"
 #include "stdlib.h"
 #include<stack>
 #include<iomanip>
