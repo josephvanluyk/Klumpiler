@@ -1,0 +1,74 @@
+global
+dcl
+procedure main();
+dcl
+    i : int;
+    n : int;
+    sum : real;
+    x : real;
+    term : real;
+    coeff : real;
+    power : real;
+begin
+    x := 3.14;
+    n := 11;
+    sum := 0;
+    for i := 0 to n do;
+        coeff := nthSineTerm(i);
+        power := pow(x, i);
+        term := coeff*power;
+        sum := sum + term;
+    end;
+    writeln("Sine evaluted at ", x, " is approximately ", sum);
+end
+{
+    nthSineTerm is a procedure that takes an integer n
+    and returns the coefficient of x^n in the
+    taylor series of sin(x)
+}
+procedure nthSineTerm(n : int) : real;
+dcl
+    sign : int;
+    fact : int;
+begin
+    if ((n % 2) = 0) then do;
+        return 0;
+    end;
+    if(((n - 1) / 2) % 2 = 0) then do;
+        sign := 1;
+    end;
+    else do;
+        sign := -1;
+    end;
+    fact := factorial(n);
+    return (sign + 0.0) / fact;
+
+
+end
+
+{
+    factorial(n) returns n!
+}
+procedure factorial(n : int) : int;
+dcl
+begin
+    if(n = 0) then do;
+        return 1;
+    end;
+    else do;
+        return n * factorial(n - 1);
+    end;
+end
+
+procedure pow(x : real, n : int) : real;
+dcl
+    product : real;
+    i : int;
+begin
+    product := 1.0;
+    for i := 1 to n do;
+        product := product * x;
+    end;
+    return product;
+end
+.

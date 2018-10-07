@@ -1499,7 +1499,10 @@ int return_statement(){
 							addLine("", "add", "esp, 8", "");
 						}else if(typeStack.top() == INT){
 							addLine("", "fild", "dword [esp]", "");
-							addLine("", "fstp", "qword xmm0", "Move return value to xmm0");
+                            addLine("", "sub" , "esp, 4", "");
+							addLine("", "fstp", "qword [esp]", "Move return value to xmm0");
+                            addLine("", "movsd", "xmm0, [esp]", "");
+                            addLine("", "add", "esp, 8", "");
 						}else{
 							cerr << "Invalid return type" << endl;
 							error();
