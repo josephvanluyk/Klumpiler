@@ -35,8 +35,8 @@ This code was created to solve the classical "fizzbuzz" problem. For numbers div
 
 Code:
 
-[Fizzbuzz Code](screenshots/fizzbuzz_code.png)
+![Fizzbuzz Code](screenshots/fizzbuzz_code.png)
 
 Output:
 
-[Fizzbuzz Output](screenshots/fizzbuzz.png)
+![Fizzbuzz Output](screenshots/fizzbuzz.png)
