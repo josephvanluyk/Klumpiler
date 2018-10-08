@@ -3,5 +3,5 @@ dcl
 procedure main();
 dcl
 begin
-	write(3);
+	writeln(3);
 end.

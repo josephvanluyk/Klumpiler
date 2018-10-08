@@ -19,7 +19,7 @@ begin
         term := coeff*power;
         sum := sum + term;
     end;
-    writeln("Sine evaluted at ", x, " is approximately ", sum);
+    writeln("Sine evaluated at ", x, " is approximately ", sum);
 end
 {
     nthSineTerm is a procedure that takes an integer n

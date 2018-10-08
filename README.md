@@ -25,6 +25,15 @@ To manually assemble and link a generated assembly file, use the following comma
 `gcc -m32 <object file name> -o <executable name>`
 
 ---
-# Pal
+# Examples
+    Code for these examples is located in `/klump/klumpile/examples/`.
+## fizzbuzz.klump
+    This code was created to solve the classical "fizzbuzz" problem. For numbers divisible by 3, it prints "Fizz." For numbers divisible by 5, it prints "Buzz." For numbers divisible by both, it prints "Fizzbuzz." Otherwise, it prints the number.
 
-Pal is a subset of Klump. It has very few features: input, variables (integer only), assignment, arithmetic, and output (no input). Sample pal files have the extension *.pal*.
+    Code:
+
+    [Fizzbuzz Code](screenshots/fizzbuzz_code)
+
+    Output:
+
+    [Fizzbuzz Output](screenshots/fizzbuzz)
