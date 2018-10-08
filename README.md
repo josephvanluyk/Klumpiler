@@ -33,11 +33,11 @@ Code for these examples is located in `/klump/klumpile/examples/`. It also conta
 
 This code was created to show a simple klump program. It prints the number three. It utilizes write statements.
 
-Code:
+###
 
 ![Print code](screenshots/print_code.png)
 
-Output:
+###
 
 ![Print output](screenshots/print.png)
 
@@ -45,11 +45,11 @@ Output:
 
 This code was created to solve the classical "fizzbuzz" problem. For numbers divisible by 3, it prints "Fizz." For numbers divisible by 5, it prints "Buzz." For numbers divisible by both, it prints "Fizzbuzz." Otherwise, it prints the number. This program utilizes the compiler's implementation of local variables, for loops, arithmetic, if statements, else statements, and write statements.
 
-Code:
+###
 
 ![Fizzbuzz Code](screenshots/fizzbuzz_code.png)
 
-Output:
+###
 
 ![Fizzbuzz Output](screenshots/fizzbuzz.png)
 
@@ -57,11 +57,11 @@ Output:
 
 This code was created to calculate the sine of a value. It tests local variables, integer and floating point arithmetic, recursion, functions, for loops, write statements, constants, if statements, and else statements.
 
-Code:
+###
 
 ![Sine Code](screenshots/sine_code.png)
 
-Output:
+###
 
 ![Sine Output](screenshots/sine.png)
 
@@ -69,10 +69,10 @@ Output:
 
 This code was created to randomly generate and sort an array. It tests local variables, comparisons, booleans, if statements, else statements, arrays, random numbers, write statements, and read statements.
 
-Code:
+###
 
 ![Sort Code](screenshots/sort_code.png)
 
-Output:
+###
 
 ![Sort Output](screenshots/sort.png)
