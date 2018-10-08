@@ -511,7 +511,7 @@ NewLine:       db        0xA, 0              	;Print NewLine
 randIn:        db        "/dev/urandom"      	;File for random bytes
 negone:        dq        -1.0                	;Negative one
 Label0:        dq        3.14                
-Label4:        db        "Sine evaluted at ", 0
+Label4:        db        "Sine evaluated at ", 0
 Label5:        db        " is approximately ", 0
 Label14:       dq        0.0                 
 Label19:       dq        1.0                 
