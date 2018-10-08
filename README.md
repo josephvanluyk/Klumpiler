@@ -26,14 +26,17 @@ To manually assemble and link a generated assembly file, use the following comma
 
 ---
 # Examples
-    Code for these examples is located in `/klump/klumpile/examples/`.
+
+Code for these examples is located in `/klump/klumpile/examples/`.
+
 ## fizzbuzz.klump
-    This code was created to solve the classical "fizzbuzz" problem. For numbers divisible by 3, it prints "Fizz." For numbers divisible by 5, it prints "Buzz." For numbers divisible by both, it prints "Fizzbuzz." Otherwise, it prints the number.
 
-    Code:
+This code was created to solve the classical "fizzbuzz" problem. For numbers divisible by 3, it prints "Fizz." For numbers divisible by 5, it prints "Buzz." For numbers divisible by both, it prints "Fizzbuzz." Otherwise, it prints the number.
 
-    [Fizzbuzz Code](screenshots/fizzbuzz_code)
+Code:
 
-    Output:
+[Fizzbuzz Code](screenshots/fizzbuzz_code)
 
-    [Fizzbuzz Output](screenshots/fizzbuzz)
+Output:
+
+[Fizzbuzz Output](screenshots/fizzbuzz)
